@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>사다리 타기 봇 — 건파이어 리본(Gunfire Reborn)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f9f8f6;
+    --surface: #ffffff;
+    --surface2: #f1f0ec;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.2);
+    --text: #1a1a1a;
+    --text2: #666;
+    --blue: #2a7de1;
+    --blue-bg: #e8f1fc;
+    --blue-text: #1a5db0;
+    --red: #d94040;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1918;
+      --surface: #252422;
+      --surface2: #2e2c2a;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.2);
+      --text: #eee;
+      --text2: #999;
+      --blue: #5aa3f5;
+      --blue-bg: #1a2d4a;
+      --blue-text: #7ab8f8;
+      --red: #f07070;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px 48px;
+  }
+
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 24px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    max-width: 620px;
+    margin: 0 auto 20px;
+  }
+  .tab {
+    flex: 1;
+    padding: 11px;
+    border: 1.5px solid var(--border2);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .tab.active {
+    background: var(--blue-bg);
+    color: var(--blue-text);
+    border-color: var(--blue);
+  }
+  .tab:hover:not(.active) { background: var(--surface2); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    max-width: 620px;
+    margin: 0 auto;
+  }
+
+  .section { display: block; }
+  .section + .section { margin-top: 20px; }
+
+  .workspace {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  .workspace .card { max-width: none; margin: 0; }
+  .workspace .section + .section { margin-top: 0; }
+  @media (max-width: 900px) {
+    .workspace { grid-template-columns: 1fr; }
+  }
+
+  .notice {
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 8px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .input-row input {
+    flex: 1;
+    padding: 9px 12px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .input-row input:focus { border-color: var(--blue); }
+  .input-row button, .btn-add {
+    padding: 9px 16px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 14px;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .input-row button:hover, .btn-add:hover { background: var(--border); }
+
+  .name-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+    min-height: 32px;
+  }
+  .name-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 13px;
+  }
+  .name-tag button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 16px;
+    line-height: 1;
+    padding: 0;
+    margin-left: 2px;
+  }
+  .name-tag button:hover { color: var(--red); }
+
+  .team-count-picker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .team-count-picker span {
+    color: var(--text2);
+    font-size: 13px;
+  }
+  .team-count-picker button {
+    padding: 7px 14px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .team-count-picker button.active {
+    border-color: var(--blue);
+    background: var(--blue);
+    color: #fff;
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--blue);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    margin-top: 4px;
+  }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-primary:active { transform: scale(0.98); }
+  .reset-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+  .btn-reset {
+    padding: 6px 11px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .btn-reset:hover {
+    background: var(--border);
+    color: var(--text);
+  }
+
+  .anim-msg {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text2);
+    margin-top: 10px;
+    min-height: 20px;
+  }
+
+  canvas {
+    display: none;
+    width: 100%;
+    margin-top: 14px;
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+  }
+
+  .team-result {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .team-result.teams-3 { grid-template-columns: repeat(3, 1fr); }
+  .team-card {
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    border: 1px solid var(--border);
+  }
+  .team-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+  .team-card .member { font-size: 13px; color: var(--text2); padding: 3px 0; }
+
+  .result-box {
+    margin-top: 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .result-row {
+    display: flex;
+    align-items: center;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    gap: 12px;
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-row .label { color: var(--text2); min-width: 80px; font-size: 13px; }
+  .result-row .val { font-weight: 600; }
+  .result-row .sub { font-size: 12px; color: var(--text2); font-weight: 400; margin-left: 4px; }
+
+  .char-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .char-card {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 8px;
+    text-align: center;
+    cursor: pointer;
+    background: var(--surface);
+    transition: all 0.12s;
+    user-select: none;
+  }
+  .char-card:hover { background: var(--surface2); }
+  .char-card.selected {
+    background: var(--blue-bg);
+    border-color: var(--blue);
+  }
+  .char-card .icon { font-size: 24px; display: block; margin-bottom: 4px; }
+  .char-card .ko { font-size: 12px; font-weight: 600; color: var(--text); }
+  .char-card.selected .ko { color: var(--blue-text); }
+  .char-card .en { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .char-card.selected .en { color: var(--blue); }
+
+  .char-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .char-actions button {
+    padding: 6px 12px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .char-actions button:hover { background: var(--border); }
+
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 32px;
+  }
+</style>
+</head>
+<body>
+
+<h1>🎮 사다리 타기 봇</h1>
+<p class="subtitle">건파이어 리본(Gunfire Reborn) 캐릭터 배정 · 팀 나누기</p>
+
+<!-- ===== 팀 나누기 ===== -->
+<div class="workspace">
+<div class="card section active" id="sec-team">
+  <p class="notice">이름을 입력하고 Enter 또는 추가 버튼을 눌러주세요 (2명 이상)</p>
+  <div class="input-row">
+    <input type="text" id="nameInput" placeholder="이름 입력..." maxlength="8"
+      onkeydown="if(event.key==='Enter')addName()">
+    <button onclick="addName()">추가</button>
+  </div>
+  <div class="name-grid" id="nameTags"></div>
+  <div class="team-count-picker">
+    <span>팀 개수</span>
+    <button class="active" data-count="2" onclick="setTeamCount(2)">2팀</button>
+    <button data-count="3" onclick="setTeamCount(3)">3팀</button>
+  </div>
+  <button class="btn-primary" onclick="runTeamLadder()">🎲 사다리 타기 시작!</button>
+  <div class="reset-row">
+    <button class="btn-reset" onclick="resetTeam()">↺ 팀 초기화</button>
+  </div>
+  <div class="anim-msg" id="teamMsg"></div>
+  <canvas id="ladderTeam"></canvas>
+  <div id="teamResult"></div>
+</div>
+
+<!-- ===== 캐릭터 배정 ===== -->
+<div class="card section" id="sec-char">
+  <p class="notice">참여자 이름을 입력하세요 (1명 이상)</p>
+  <div class="input-row">
+    <input type="text" id="charNameInput" placeholder="이름 입력..." maxlength="8"
+      onkeydown="if(event.key==='Enter')addCharName()">
+    <button onclick="addCharName()">추가</button>
+  </div>
+  <div class="name-grid" id="charNameTags"></div>
+
+  <div class="divider"></div>
+  <p class="notice">배정할 캐릭터 선택 (클릭으로 포함/제외)</p>
+  <div class="char-actions">
+    <button onclick="selectAllChars()">전체 선택</button>
+    <button onclick="deselectAllChars()">전체 해제</button>
+  </div>
+  <div class="char-grid" id="charGrid"></div>
+
+  <button class="btn-primary" onclick="runRandomDirect()">🎲 랜덤 캐릭터 뽑기</button>
+  <div class="reset-row">
+    <button class="btn-reset" onclick="resetCharacters()">↺ 캐릭터 초기화</button>
+  </div>
+  <div class="anim-msg" id="charMsg"></div>
+  <canvas id="ladderChar"></canvas>
+<div id="charResult"></div>
+</div>
+</div>
+
+<footer>건파이어 리본(Gunfire Reborn) 사다리 타기 봇 · 로컬 전용</footer>
+
+<script>
+// 위키 API로 이미지 자동 로드 — 브라우저에서 직접 가져옴
+const CHARS = [
+  { en:'Crown Prince', ko:'프린스',  icon:'👑', role:'원소',  wiki:'Crown_Prince' },
+  { en:'Ao Bai',       ko:'아오바이', icon:'🐻', role:'근접',  wiki:'Ao_Bai' },
+  { en:'Qing Yan',     ko:'세이엔',  icon:'🦊', role:'폭발',  wiki:'Qing_Yan' },
+  { en:'Lei Luo',      ko:'레이로우', icon:'⚡', role:'번개',  wiki:'Lei_Luo' },
+  { en:'Tao',          ko:'피치',    icon:'🍑', role:'독',    wiki:'Tao' },
+  { en:'Qian Sui',     ko:'천세',    icon:'🐢', role:'방어',  wiki:'Qian_Sui' },
+  { en:'Xing Zhe',     ko:'행자',    icon:'🐒', role:'민첩',  wiki:'Xing_Zhe' },
+  { en:'Li',           ko:'리',      icon:'🔥', role:'화염',  wiki:'Li' },
+  { en:'Zi Xiao',      ko:'아울',    icon:'🦉', role:'에너지', wiki:'Zi_Xiao' },
+  { en:'Nona',         ko:'나인',    icon:'9️⃣', role:'회복',  wiki:'Nona' },
+  { en:'Lyn',          ko:'린',      icon:'❄️', role:'빙결',  wiki:'Lyn' },
+  { en:'Momo',         ko:'묵큐',    icon:'🐱', role:'지원',  wiki:'Momo' },
+  { en:'Yoyo',         ko:'요요',    icon:'🌀', role:'공격',  wiki:'Yoyo' },
+  { en:'Cang Jue',     ko:'창결',    icon:'🦅', role:'저격',  wiki:'Cang_Jue' },
+];
+
+// 위키에서 캐릭터 이미지 URL 가져오기
+const imgCache = {};
+async function fetchWikiImg(wikiName) {
+  if (imgCache[wikiName]) return imgCache[wikiName];
+  try {
+    const api = `https://gunfirereborn.fandom.com/api.php?action=query&titles=${wikiName}&prop=pageimages&pithumbsize=300&format=json&origin=*`;
+    const res = await fetch(api);
+    const json = await res.json();
+    const pages = json.query.pages;
+    const page = pages[Object.keys(pages)[0]];
+    const url = page.thumbnail ? page.thumbnail.source : null;
+    imgCache[wikiName] = url;
+    return url;
+  } catch(e) {
+    return null;
+  }
+}
+
+// 모든 캐릭터 이미지 미리 로드
+async function preloadAllImages() {
+  await Promise.all(CHARS.map(async (c) => {
+    const url = await fetchWikiImg(c.wiki);
+    if (url) c.img = url;
+  }));
+  buildCharGrid();
+}
+// 페이지 로드 시 자동 실행
+preloadAllImages();
+
+// 팀 나누기와 캐릭터 배정이 동일한 참여자 목록을 공유합니다.
+const participantNames = [];
+const teamNames = participantNames;
+const charNames = participantNames;
+let selectedChars = new Set(
+  CHARS.map((_, i) => i).filter(i => !['천세', '창결'].includes(CHARS[i].ko))
+);
+let teamCount = 2;
+let teamRunId = 0;
+let charRunId = 0;
+
+/* ── 이름 태그 ───────────────── */
+function renderTags(arr, containerId, removeFnName) {
+  document.getElementById(containerId).innerHTML =
+    arr.map((n,i)=>`<span class="name-tag">${n}
+      <button onclick="${removeFnName}(${i})" title="삭제">×</button>
+    </span>`).join('');
+}
+
+function addName() {
+  const v = document.getElementById('nameInput').value.trim();
+  if(!v||teamNames.includes(v)) return;
+  teamNames.push(v);
+  document.getElementById('nameInput').value='';
+  renderTags(teamNames,'nameTags','removeName');
+  renderTags(charNames,'charNameTags','removeCharName');
+}
+
+function setTeamCount(count) {
+  teamCount = count;
+  document.querySelectorAll('.team-count-picker button').forEach(button =>
+    button.classList.toggle('active', Number(button.dataset.count) === count));
+  document.getElementById('teamMsg').textContent = '';
+  document.getElementById('teamResult').innerHTML = '';
+  document.getElementById('ladderTeam').style.display = 'none';
+}
+function removeName(i){
+  teamNames.splice(i,1);
+  renderTags(teamNames,'nameTags','removeName');
+  renderTags(charNames,'charNameTags','removeCharName');
+}
+
+function addCharName() {
+  const v = document.getElementById('charNameInput').value.trim();
+  if(!v||charNames.includes(v)) return;
+  charNames.push(v);
+  document.getElementById('charNameInput').value='';
+  renderTags(charNames,'charNameTags','removeCharName');
+  renderTags(teamNames,'nameTags','removeName');
+}
+function removeCharName(i){
+  charNames.splice(i,1);
+  renderTags(charNames,'charNameTags','removeCharName');
+  renderTags(teamNames,'nameTags','removeName');
+}
+
+function clearCanvas(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvas.style.display = 'none';
+}
+
+function resetTeam() {
+  teamRunId++;
+  setTeamCount(2);
+  document.getElementById('teamMsg').textContent = '';
+  document.getElementById('teamResult').innerHTML = '';
+  clearCanvas('ladderTeam');
+}
+
+function resetCharacters() {
+  charRunId++;
+  selectedChars = new Set(
+    CHARS.map((_, i) => i).filter(i => !['천세', '창결'].includes(CHARS[i].ko))
+  );
+  buildCharGrid();
+  document.getElementById('charMsg').textContent = '';
+  document.getElementById('charResult').innerHTML = '';
+  clearCanvas('ladderChar');
+}
+
+/* ── 캐릭터 그리드 ───────────── */
+function charThumb(c, size=52) {
+  if (c.img) {
+    return `<img src="${c.img}" alt="${c.ko}"
+      style="width:${size}px;height:${size}px;object-fit:cover;border-radius:50%;display:block;margin:0 auto 4px;"
+      onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span style=\\'font-size:${Math.round(size*0.6)}px\\'>${c.icon}</span>');">`;
+  }
+  return `<span class="icon" style="font-size:${Math.round(size*0.6)}px;">${c.icon}</span>`;
+}
+
+function buildCharGrid() {
+  document.getElementById('charGrid').innerHTML = CHARS.map((c,i)=>`
+    <div class="char-card ${selectedChars.has(i)?'selected':''}" id="cc${i}" onclick="toggleChar(${i})">
+      ${charThumb(c, 52)}
+      <div class="ko">${c.ko}</div>
+      <div class="en">${c.en}</div>
+    </div>`).join('');
+}
+function toggleChar(i){
+  if(selectedChars.has(i)){ if(selectedChars.size>1) selectedChars.delete(i); }
+  else selectedChars.add(i);
+  document.getElementById('cc'+i).classList.toggle('selected', selectedChars.has(i));
+}
+function selectAllChars(){ CHARS.forEach((_,i)=>selectedChars.add(i)); buildCharGrid(); }
+function deselectAllChars(){
+  if(selectedChars.size===1) return;
+  const first=[...selectedChars][0];
+  selectedChars.clear(); selectedChars.add(first);
+  buildCharGrid();
+}
+buildCharGrid();
+
+/* ── 유틸 ────────────────────── */
+function shuffle(arr){ return [...arr].sort(()=>Math.random()-0.5); }
+
+function isDark(){
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+/* ── 사다리 그리기 & 애니메이션 ── */
+function drawLadder(canvasId, tops, bottoms, callback) {
+  const canvas = document.getElementById(canvasId);
+  canvas.style.display = 'block';
+  const n = tops.length;
+  const W = canvas.parentElement.clientWidth - 40;
+  const H = Math.max(260, n * 28 + 140);
+  canvas.width  = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  const PAD = Math.min(36, W / (n+1));
+  const usableW = W - PAD*2;
+  const colW = n > 1 ? usableW/(n-1) : 0;
+  const xs = Array.from({length:n},(_,i)=> n===1 ? W/2 : PAD + i*colW);
+  const TOP = 48, BOT = H - 48;
+
+  const dark = isDark();
+  const lineColor    = dark ? '#444' : '#ccc';
+  const textColor    = dark ? '#ddd' : '#222';
+  const hlColors     = ['#2a7de1','#e25252','#27ae60','#e67e22','#8e44ad','#16a085'];
+  const animFrames   = 50;
+
+  // 가로대 생성
+  const rowCount = Math.max(6, n*2+2);
+  const rowH = (BOT-TOP)/rowCount;
+  const rungs = [];
+  const usedRow = Array.from({length:n-1},()=>new Set());
+
+  for(let r=0;r<rowCount;r++){
+    let i=0;
+    while(i<n-1){
+      if(Math.random()<0.4 && !usedRow[i].has(r)){
+        const y = TOP + (r+0.5)*rowH;
+        rungs.push({x1:xs[i], x2:xs[i+1], y});
+        usedRow[i].add(r);
+        if(i+1<n-1) usedRow[i+1].add(r);
+        i+=2;
+      } else i++;
+    }
+  }
+
+  // 경로 추적
+  function trace(startIdx){
+    let pos=startIdx;
+    const path=[{x:xs[pos], y:TOP}];
+    for(let r=0;r<rowCount;r++){
+      const ty=TOP+(r+0.5)*rowH;
+      const hit=rungs.find(rg=>rg.y===ty&&(rg.x1===xs[pos]||rg.x2===xs[pos]));
+      if(hit){ pos = hit.x1===xs[pos] ? xs.indexOf(hit.x2) : xs.indexOf(hit.x1); }
+      path.push({x:xs[pos], y:ty});
+    }
+    path.push({x:xs[pos], y:BOT});
+    return {path, end:pos};
+  }
+  const mapping = Array.from({length:n},(_,i)=>trace(i));
+
+  function drawStatic(){
+    ctx.strokeStyle=lineColor; ctx.lineWidth=1.5;
+    for(let i=0;i<n;i++){
+      ctx.beginPath(); ctx.moveTo(xs[i],TOP); ctx.lineTo(xs[i],BOT); ctx.stroke();
+    }
+    for(const rg of rungs){
+      ctx.beginPath(); ctx.moveTo(rg.x1,rg.y); ctx.lineTo(rg.x2,rg.y); ctx.stroke();
+    }
+    ctx.font=`600 ${Math.min(13, W/(n*2.2)+7)}px sans-serif`;
+    ctx.textAlign='center';
+    ctx.fillStyle=textColor;
+    tops.forEach((t,i)=>ctx.fillText(t, xs[i], TOP-12));
+    bottoms.forEach((b,i)=>ctx.fillText(b, xs[i], BOT+20));
+  }
+
+  let frame=0;
+  function animate(){
+    ctx.clearRect(0,0,W,H);
+    drawStatic();
+    const prog=frame/animFrames;
+    for(let i=0;i<n;i++){
+      const {path}=mapping[i];
+      const pts=Math.floor(prog*(path.length-1));
+      ctx.strokeStyle=hlColors[i%hlColors.length];
+      ctx.lineWidth=2.5;
+      ctx.beginPath();
+      for(let p=0;p<=pts;p++){
+        p===0?ctx.moveTo(path[p].x,path[p].y):ctx.lineTo(path[p].x,path[p].y);
+      }
+      ctx.stroke();
+    }
+    if(frame<animFrames){ frame++; requestAnimationFrame(animate); }
+    else {
+      ctx.clearRect(0,0,W,H);
+      drawStatic();
+      for(let i=0;i<n;i++){
+        const {path}=mapping[i];
+        ctx.strokeStyle=hlColors[i%hlColors.length];
+        ctx.lineWidth=2.5;
+        ctx.beginPath();
+        path.forEach((p,j)=>j===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+        ctx.stroke();
+      }
+      callback(mapping.map(m=>m.end));
+    }
+  }
+  animate();
+}
+
+/* ── 팀 나누기 ───────────────── */
+function runTeamLadder(){
+  if(teamNames.length<teamCount){
+    document.getElementById('teamMsg').textContent=`${teamCount}팀으로 나누려면 이름을 ${teamCount}명 이상 입력해 주세요`;
+    return;
+  }
+  document.getElementById('teamMsg').textContent='사다리 타는 중... 🎢';
+  document.getElementById('teamResult').innerHTML='';
+  const runId=++teamRunId;
+
+  const n=teamNames.length;
+  const baseSize=Math.floor(n/teamCount);
+  const remainder=n%teamCount;
+  const teamLabels=shuffle(
+    Array.from({length:teamCount},(_,i)=>
+      Array(baseSize+(i<remainder?1:0)).fill(`${i+1}팀`)
+    ).flat()
+  );
+
+  drawLadder('ladderTeam', [...teamNames], teamLabels, (ends)=>{
+    if(runId!==teamRunId) return;
+    document.getElementById('teamMsg').textContent='✅ 결과 확인!';
+    const teams=Array.from({length:teamCount},()=>[]);
+    ends.forEach((endIdx,startIdx)=>{
+      const teamIndex=Number.parseInt(teamLabels[endIdx],10)-1;
+      teams[teamIndex].push(teamNames[startIdx]);
+    });
+    const teamStyles=[
+      {color:'#2a7de1',border:'rgba(42,125,225,0.3)',icon:'🔵'},
+      {color:'#e25252',border:'rgba(226,82,82,0.3)',icon:'🔴'},
+      {color:'#2b9b70',border:'rgba(43,155,112,0.3)',icon:'🟢'}
+    ];
+    document.getElementById('teamResult').innerHTML=`
+      <div class="team-result teams-${teamCount}">
+        ${teams.map((members,i)=>`
+          <div class="team-card" style="border-color:${teamStyles[i].border}">
+            <h3 style="color:${teamStyles[i].color}">${teamStyles[i].icon} ${i+1}팀 (${members.length}명)</h3>
+            ${members.map(n=>`<div class="member">• ${n}</div>`).join('')}
+          </div>
+        `).join('')}
+      </div>`;
+  });
+}
+
+/* ── 캐릭터 배정 ─────────────── */
+function runCharLadder(){
+  if(charNames.length<1){
+    document.getElementById('charMsg').textContent='이름을 1명 이상 입력해 주세요';
+    return;
+  }
+  const pool=[...selectedChars].map(i=>CHARS[i]);
+  if(pool.length<charNames.length){
+    document.getElementById('charMsg').textContent=`선택한 캐릭터(${pool.length}개)가 참여자(${charNames.length}명)보다 적어요`;
+    return;
+  }
+  document.getElementById('charMsg').textContent='';
+  document.getElementById('charResult').innerHTML='';
+  const runId=++charRunId;
+
+  if(charNames.length===1){
+    runRoulette(charNames[0], pool);
+    return;
+  }
+
+  document.getElementById('charMsg').textContent='사다리 타는 중... 🎢';
+  const assigned=shuffle(pool).slice(0,charNames.length);
+  const topLabels=[...charNames];
+  const botLabels=assigned.map(c=>`${c.icon}${c.ko}`);
+
+  drawLadder('ladderChar', topLabels, botLabels, (ends)=>{
+    if(runId!==charRunId) return;
+    document.getElementById('charMsg').textContent='✅ 캐릭터 배정 완료!';
+    const rows=ends.map((endIdx,startIdx)=>{
+      const c=assigned[endIdx];
+      return `<div class="result-row">
+        <span class="label">${charNames[startIdx]}</span>
+        <span class="val">${c.icon} ${c.ko}</span>
+        <span class="sub">(${c.en} · ${c.role})</span>
+      </div>`;
+    });
+    document.getElementById('charResult').innerHTML=`<div class="result-box">${rows.join('')}</div>`;
+  });
+}
+
+/* ── 바로 랜덤 뽑기 (최대 6명) ── */
+function runRandomDirect(){
+  if(charNames.length<1){
+    document.getElementById('charMsg').textContent='이름을 1명 이상 입력해 주세요';
+    return;
+  }
+  if(charNames.length>6){
+    document.getElementById('charMsg').textContent='최대 6명까지 가능해요';
+    return;
+  }
+  const pool=[...selectedChars].map(i=>CHARS[i]);
+  if(pool.length<charNames.length){
+    document.getElementById('charMsg').textContent=`선택한 캐릭터(${pool.length}개)가 참여자(${charNames.length}명)보다 적어요`;
+    return;
+  }
+
+  document.getElementById('ladderChar').style.display='none';
+  document.getElementById('charMsg').textContent='🎰 뽑는 중...';
+  document.getElementById('charResult').innerHTML='';
+  const runId=++charRunId;
+
+  const assigned=shuffle(pool).slice(0,charNames.length);
+  const cards=charNames.map((n,i)=>({name:n, char:null, pool:shuffle(pool), tick:0}));
+
+  const totalTicks=22;
+  let frame=0;
+
+  const html=charNames.map((n,i)=>`
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;text-align:center;">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:500;">${n}</div>
+      <div id="ri${i}" style="font-size:36px;line-height:1;transition:transform 0.08s;min-height:56px;display:flex;align-items:center;justify-content:center;">❓</div>
+      <div id="rk${i}" style="font-size:13px;font-weight:700;margin-top:8px;min-height:18px;"></div>
+    </div>`).join('');
+
+  document.getElementById('charResult').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(${Math.min(charNames.length,3)},1fr);gap:10px;margin-top:14px;">${html}</div>`;
+
+  function tick(){
+    if(runId!==charRunId) return;
+    const done=frame>=totalTicks;
+    for(let i=0;i<charNames.length;i++){
+      const iconEl=document.getElementById('ri'+i);
+      const koEl=document.getElementById('rk'+i);
+      if(done){
+        const c=assigned[i];
+        iconEl.innerHTML=`<img src="${c.img}" alt="${c.ko}"
+          style="width:56px;height:56px;object-fit:cover;border-radius:50%;"
+          onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span style=\\'font-size:36px\\'>${c.icon}</span>');">`;
+        koEl.textContent=c.ko;
+        iconEl.style.transform='scale(1.25)';
+        iconEl.style.transition='transform 0.2s';
+        setTimeout(()=>iconEl.style.transform='scale(1)',250);
+      } else {
+        const c=pool[(frame+i*3)%pool.length];
+        iconEl.textContent=c.icon;
+        koEl.textContent='';
+      }
+    }
+    if(done){
+      document.getElementById('charMsg').textContent='✅ 캐릭터 배정 완료!';
+    } else {
+      frame++;
+      const delay=frame>totalTicks*0.6 ? 80+frame*10 : 60;
+      setTimeout(tick, delay);
+    }
+  }
+  tick();
+}
+
+/* ── 1명 전용 룰렛 ───────────── */
+function runRoulette(name, pool){
+  const canvas=document.getElementById('ladderChar');
+  canvas.style.display='none';
+  const msgEl=document.getElementById('charMsg');
+  const resultEl=document.getElementById('charResult');
+  const runId=++charRunId;
+
+  const final=shuffle(pool)[0];
+  let tick=0;
+  const totalTicks=28;
+  let delay=60;
+
+  resultEl.innerHTML=`
+    <div style="text-align:center;padding:28px 16px;background:var(--surface2);border-radius:var(--radius-sm);margin-top:14px;">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">${name}의 캐릭터</div>
+      <div id="rouletteIcon" style="font-size:52px;line-height:1.2;transition:transform 0.08s;min-height:72px;display:flex;align-items:center;justify-content:center;">❓</div>
+      <div id="rouletteKo" style="font-size:20px;font-weight:700;margin-top:10px;min-height:28px;"></div>
+      <div id="rouletteEn" style="font-size:13px;color:var(--text2);margin-top:4px;min-height:18px;"></div>
+    </div>`;
+
+  const iconEl=document.getElementById('rouletteIcon');
+  const koEl=document.getElementById('rouletteKo');
+  const enEl=document.getElementById('rouletteEn');
+
+  function spin(){
+    if(runId!==charRunId) return;
+    const cur=pool[tick%pool.length];
+    iconEl.style.transform='scale(1.15)';
+    iconEl.textContent=cur.icon;
+    koEl.textContent=cur.ko;
+    enEl.textContent='';
+    setTimeout(()=>iconEl.style.transform='scale(1)',60);
+    tick++;
+    if(tick<totalTicks){
+      delay = tick > totalTicks*0.6 ? delay*1.18 : delay;
+      setTimeout(spin, delay);
+    } else {
+      iconEl.innerHTML=`<img src="${final.img}" alt="${final.ko}"
+        style="width:72px;height:72px;object-fit:cover;border-radius:50%;transition:transform 0.2s;"
+        onerror="this.outerHTML='<span style=\\'font-size:52px\\'>${final.icon}</span>'">`;
+      koEl.textContent=final.ko;
+      enEl.textContent=`${final.en} · ${final.role}`;
+      iconEl.style.transform='scale(1.3)';
+      iconEl.style.transition='transform 0.25s';
+      setTimeout(()=>iconEl.style.transform='scale(1)',300);
+      msgEl.textContent='✅ 캐릭터 결정!';
+    }
+  }
+  msgEl.textContent='🎰 뽑는 중...';
+  spin();
+}
+</script>
+</body>
+</html>
