@@ -446,7 +446,7 @@ async function preloadAllImages() {
 preloadAllImages();
 
 // 팀 나누기와 캐릭터 배정이 동일한 참여자 목록을 공유합니다.
-const participantNames = [];
+const participantNames = ['은교', '은둥', '초록', '민석', '민우', '백인'];
 const teamNames = participantNames;
 const charNames = participantNames;
 let selectedChars = new Set(
@@ -463,6 +463,9 @@ function renderTags(arr, containerId, removeFnName) {
       <button onclick="${removeFnName}(${i})" title="삭제">×</button>
     </span>`).join('');
 }
+
+renderTags(teamNames,'nameTags','removeName');
+renderTags(charNames,'charNameTags','removeCharName');
 
 function addName() {
   const v = document.getElementById('nameInput').value.trim();
