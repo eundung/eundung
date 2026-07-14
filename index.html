@@ -1,888 +1,343 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>사다리 타기 봇 — 건파이어 리본(Gunfire Reborn)</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg: #f9f8f6;
-    --surface: #ffffff;
-    --surface2: #f1f0ec;
-    --border: rgba(0,0,0,0.12);
-    --border2: rgba(0,0,0,0.2);
-    --text: #1a1a1a;
-    --text2: #666;
-    --blue: #2a7de1;
-    --blue-bg: #e8f1fc;
-    --blue-text: #1a5db0;
-    --red: #d94040;
-    --radius: 10px;
-    --radius-sm: 6px;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #1a1918;
-      --surface: #252422;
-      --surface2: #2e2c2a;
-      --border: rgba(255,255,255,0.1);
-      --border2: rgba(255,255,255,0.2);
-      --text: #eee;
-      --text2: #999;
-      --blue: #5aa3f5;
-      --blue-bg: #1a2d4a;
-      --blue-text: #7ab8f8;
-      --red: #f07070;
-    }
-  }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    padding: 24px 16px 48px;
-  }
-
-  h1 {
-    font-size: 20px;
-    font-weight: 600;
-    text-align: center;
-    margin-bottom: 6px;
-  }
-  .subtitle {
-    text-align: center;
-    font-size: 13px;
-    color: var(--text2);
-    margin-bottom: 24px;
-  }
-
-  .tabs {
-    display: flex;
-    gap: 8px;
-    max-width: 620px;
-    margin: 0 auto 20px;
-  }
-  .tab {
-    flex: 1;
-    padding: 11px;
-    border: 1.5px solid var(--border2);
-    border-radius: var(--radius-sm);
-    background: var(--surface);
-    color: var(--text2);
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.15s;
-  }
-  .tab.active {
-    background: var(--blue-bg);
-    color: var(--blue-text);
-    border-color: var(--blue);
-  }
-  .tab:hover:not(.active) { background: var(--surface2); }
-
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    max-width: 620px;
-    margin: 0 auto;
-  }
-
-  .section { display: block; }
-  .section + .section { margin-top: 20px; }
-
-  .workspace {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px;
-    max-width: 1280px;
-    margin: 0 auto;
-  }
-  .workspace .card { max-width: none; margin: 0; }
-  .workspace .section + .section { margin-top: 0; }
-  @media (max-width: 900px) {
-    .workspace { grid-template-columns: 1fr; }
-  }
-
-  .notice {
-    font-size: 12px;
-    color: var(--text2);
-    margin-bottom: 8px;
-  }
-
-  .input-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-  .input-row input {
-    flex: 1;
-    padding: 9px 12px;
-    border: 1px solid var(--border2);
-    border-radius: var(--radius-sm);
-    background: var(--surface2);
-    color: var(--text);
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-  .input-row input:focus { border-color: var(--blue); }
-  .input-row button, .btn-add {
-    padding: 9px 16px;
-    border: 1px solid var(--border2);
-    border-radius: var(--radius-sm);
-    background: var(--surface2);
-    color: var(--text);
-    cursor: pointer;
-    font-size: 14px;
-    white-space: nowrap;
-    transition: background 0.15s;
-  }
-  .input-row button:hover, .btn-add:hover { background: var(--border); }
-
-  .name-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 14px;
-    min-height: 32px;
-  }
-  .name-tag {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 5px 12px;
-    font-size: 13px;
-  }
-  .name-tag button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text2);
-    font-size: 16px;
-    line-height: 1;
-    padding: 0;
-    margin-left: 2px;
-  }
-  .name-tag button:hover { color: var(--red); }
-
-  .team-count-picker {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-  .team-count-picker span {
-    color: var(--text2);
-    font-size: 13px;
-  }
-  .team-count-picker button {
-    padding: 7px 14px;
-    border: 1px solid var(--border2);
-    border-radius: var(--radius-sm);
-    background: var(--surface2);
-    color: var(--text);
-    cursor: pointer;
-    font-size: 13px;
-  }
-  .team-count-picker button.active {
-    border-color: var(--blue);
-    background: var(--blue);
-    color: #fff;
-  }
-
-  .btn-primary {
-    width: 100%;
-    padding: 12px;
-    border: none;
-    border-radius: var(--radius-sm);
-    background: var(--blue);
-    color: #fff;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.15s, transform 0.1s;
-    margin-top: 4px;
-  }
-  .btn-primary:hover { opacity: 0.88; }
-  .btn-primary:active { transform: scale(0.98); }
-  .reset-row {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 8px;
-  }
-  .btn-reset {
-    padding: 6px 11px;
-    border: 1px solid var(--border2);
-    border-radius: var(--radius-sm);
-    background: var(--surface2);
-    color: var(--text2);
-    font-size: 12px;
-    cursor: pointer;
-  }
-  .btn-reset:hover {
-    background: var(--border);
-    color: var(--text);
-  }
-
-  .anim-msg {
-    text-align: center;
-    font-size: 13px;
-    color: var(--text2);
-    margin-top: 10px;
-    min-height: 20px;
-  }
-
-  canvas {
-    display: none;
-    width: 100%;
-    margin-top: 14px;
-    border-radius: var(--radius-sm);
-    background: var(--surface2);
-  }
-
-  .team-result {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-top: 14px;
-  }
-  .team-result.teams-3 { grid-template-columns: repeat(3, 1fr); }
-  .team-card {
-    background: var(--surface2);
-    border-radius: var(--radius-sm);
-    padding: 14px;
-    border: 1px solid var(--border);
-  }
-  .team-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
-  .team-card .member { font-size: 13px; color: var(--text2); padding: 3px 0; }
-
-  .result-box {
-    margin-top: 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-  }
-  .result-row {
-    display: flex;
-    align-items: center;
-    padding: 11px 14px;
-    border-bottom: 1px solid var(--border);
-    font-size: 14px;
-    gap: 12px;
-  }
-  .result-row:last-child { border-bottom: none; }
-  .result-row .label { color: var(--text2); min-width: 80px; font-size: 13px; }
-  .result-row .val { font-weight: 600; }
-  .result-row .sub { font-size: 12px; color: var(--text2); font-weight: 400; margin-left: 4px; }
-
-  .char-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 8px;
-    margin-bottom: 14px;
-  }
-  .char-card {
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 10px 8px;
-    text-align: center;
-    cursor: pointer;
-    background: var(--surface);
-    transition: all 0.12s;
-    user-select: none;
-  }
-  .char-card:hover { background: var(--surface2); }
-  .char-card.selected {
-    background: var(--blue-bg);
-    border-color: var(--blue);
-  }
-  .char-card .icon { font-size: 24px; display: block; margin-bottom: 4px; }
-  .char-card .ko { font-size: 12px; font-weight: 600; color: var(--text); }
-  .char-card.selected .ko { color: var(--blue-text); }
-  .char-card .en { font-size: 11px; color: var(--text2); margin-top: 2px; }
-  .char-card.selected .en { color: var(--blue); }
-
-  .char-actions {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-  .char-actions button {
-    padding: 6px 12px;
-    border: 1px solid var(--border2);
-    border-radius: var(--radius-sm);
-    background: var(--surface2);
-    color: var(--text2);
-    font-size: 12px;
-    cursor: pointer;
-  }
-  .char-actions button:hover { background: var(--border); }
-
-  .divider { height: 1px; background: var(--border); margin: 16px 0; }
-
-  footer {
-    text-align: center;
-    font-size: 12px;
-    color: var(--text2);
-    margin-top: 32px;
-  }
-</style>
-</head>
-<body>
-
-<h1>🎮 사다리 타기 봇</h1>
-<p class="subtitle">건파이어 리본(Gunfire Reborn) 캐릭터 배정 · 팀 나누기</p>
-
-<!-- ===== 팀 나누기 ===== -->
-<div class="workspace">
-<div class="card section active" id="sec-team">
-  <p class="notice">이름을 입력하고 Enter 또는 추가 버튼을 눌러주세요 (2명 이상)</p>
-  <div class="input-row">
-    <input type="text" id="nameInput" placeholder="이름 입력..." maxlength="8"
-      onkeydown="if(event.key==='Enter')addName()">
-    <button onclick="addName()">추가</button>
-  </div>
-  <div class="name-grid" id="nameTags"></div>
-  <div class="team-count-picker">
-    <span>팀 개수</span>
-    <button class="active" data-count="2" onclick="setTeamCount(2)">2팀</button>
-    <button data-count="3" onclick="setTeamCount(3)">3팀</button>
-  </div>
-  <button class="btn-primary" onclick="runTeamLadder()">🎲 사다리 타기 시작!</button>
-  <div class="reset-row">
-    <button class="btn-reset" onclick="resetTeam()">↺ 팀 초기화</button>
-  </div>
-  <div class="anim-msg" id="teamMsg"></div>
-  <canvas id="ladderTeam"></canvas>
-  <div id="teamResult"></div>
-</div>
-
-<!-- ===== 캐릭터 배정 ===== -->
-<div class="card section" id="sec-char">
-  <p class="notice">참여자 이름을 입력하세요 (1명 이상)</p>
-  <div class="input-row">
-    <input type="text" id="charNameInput" placeholder="이름 입력..." maxlength="8"
-      onkeydown="if(event.key==='Enter')addCharName()">
-    <button onclick="addCharName()">추가</button>
-  </div>
-  <div class="name-grid" id="charNameTags"></div>
-
-  <div class="divider"></div>
-  <p class="notice">배정할 캐릭터 선택 (클릭으로 포함/제외)</p>
-  <div class="char-actions">
-    <button onclick="selectAllChars()">전체 선택</button>
-    <button onclick="deselectAllChars()">전체 해제</button>
-  </div>
-  <div class="char-grid" id="charGrid"></div>
-
-  <button class="btn-primary" onclick="runRandomDirect()">🎲 랜덤 캐릭터 뽑기</button>
-  <div class="reset-row">
-    <button class="btn-reset" onclick="resetCharacters()">↺ 캐릭터 초기화</button>
-  </div>
-  <div class="anim-msg" id="charMsg"></div>
-  <canvas id="ladderChar"></canvas>
-<div id="charResult"></div>
-</div>
-</div>
-
-<footer>건파이어 리본(Gunfire Reborn) 사다리 타기 봇 · 로컬 전용</footer>
-
-<script>
-// 위키 API로 이미지 자동 로드 — 브라우저에서 직접 가져옴
-const CHARS = [
-  { en:'Crown Prince', ko:'프린스',  icon:'👑', role:'원소',  wiki:'Crown_Prince' },
-  { en:'Ao Bai',       ko:'아오바이', icon:'🐻', role:'근접',  wiki:'Ao_Bai' },
-  { en:'Qing Yan',     ko:'세이엔',  icon:'🦊', role:'폭발',  wiki:'Qing_Yan' },
-  { en:'Lei Luo',      ko:'레이로우', icon:'⚡', role:'번개',  wiki:'Lei_Luo' },
-  { en:'Tao',          ko:'피치',    icon:'🍑', role:'독',    wiki:'Tao' },
-  { en:'Qian Sui',     ko:'천세',    icon:'🐢', role:'방어',  wiki:'Qian_Sui' },
-  { en:'Xing Zhe',     ko:'행자',    icon:'🐒', role:'민첩',  wiki:'Xing_Zhe' },
-  { en:'Li',           ko:'리',      icon:'🔥', role:'화염',  wiki:'Li' },
-  { en:'Zi Xiao',      ko:'아울',    icon:'🦉', role:'에너지', wiki:'Zi_Xiao' },
-  { en:'Nona',         ko:'나인',    icon:'9️⃣', role:'회복',  wiki:'Nona' },
-  { en:'Lyn',          ko:'린',      icon:'❄️', role:'빙결',  wiki:'Lyn' },
-  { en:'Momo',         ko:'묵큐',    icon:'🐱', role:'지원',  wiki:'Momo' },
-  { en:'Yoyo',         ko:'요요',    icon:'🌀', role:'공격',  wiki:'Yoyo' },
-  { en:'Cang Jue',     ko:'창결',    icon:'🦅', role:'저격',  wiki:'Cang_Jue' },
-];
-
-// 위키에서 캐릭터 이미지 URL 가져오기
-const imgCache = {};
-async function fetchWikiImg(wikiName) {
-  if (imgCache[wikiName]) return imgCache[wikiName];
-  try {
-    const api = `https://gunfirereborn.fandom.com/api.php?action=query&titles=${wikiName}&prop=pageimages&pithumbsize=300&format=json&origin=*`;
-    const res = await fetch(api);
-    const json = await res.json();
-    const pages = json.query.pages;
-    const page = pages[Object.keys(pages)[0]];
-    const url = page.thumbnail ? page.thumbnail.source : null;
-    imgCache[wikiName] = url;
-    return url;
-  } catch(e) {
-    return null;
-  }
-}
-
-// 모든 캐릭터 이미지 미리 로드
-async function preloadAllImages() {
-  await Promise.all(CHARS.map(async (c) => {
-    const url = await fetchWikiImg(c.wiki);
-    if (url) c.img = url;
-  }));
-  buildCharGrid();
-}
-// 페이지 로드 시 자동 실행
-preloadAllImages();
-
-// 팀 나누기와 캐릭터 배정이 동일한 참여자 목록을 공유합니다.
-const participantNames = ['은교', '은둥', '초록', '민석', '민우', '백인'];
-const teamNames = participantNames;
-const charNames = participantNames;
-let selectedChars = new Set(
-  CHARS.map((_, i) => i).filter(i => !['천세', '창결'].includes(CHARS[i].ko))
-);
-let teamCount = 2;
-let teamRunId = 0;
-let charRunId = 0;
-
-/* ── 이름 태그 ───────────────── */
-function renderTags(arr, containerId, removeFnName) {
-  document.getElementById(containerId).innerHTML =
-    arr.map((n,i)=>`<span class="name-tag">${n}
-      <button onclick="${removeFnName}(${i})" title="삭제">×</button>
-    </span>`).join('');
-}
-
-renderTags(teamNames,'nameTags','removeName');
-renderTags(charNames,'charNameTags','removeCharName');
-
-function addName() {
-  const v = document.getElementById('nameInput').value.trim();
-  if(!v||teamNames.includes(v)) return;
-  teamNames.push(v);
-  document.getElementById('nameInput').value='';
-  renderTags(teamNames,'nameTags','removeName');
-  renderTags(charNames,'charNameTags','removeCharName');
-}
-
-function setTeamCount(count) {
-  teamCount = count;
-  document.querySelectorAll('.team-count-picker button').forEach(button =>
-    button.classList.toggle('active', Number(button.dataset.count) === count));
-  document.getElementById('teamMsg').textContent = '';
-  document.getElementById('teamResult').innerHTML = '';
-  document.getElementById('ladderTeam').style.display = 'none';
-}
-function removeName(i){
-  teamNames.splice(i,1);
-  renderTags(teamNames,'nameTags','removeName');
-  renderTags(charNames,'charNameTags','removeCharName');
-}
-
-function addCharName() {
-  const v = document.getElementById('charNameInput').value.trim();
-  if(!v||charNames.includes(v)) return;
-  charNames.push(v);
-  document.getElementById('charNameInput').value='';
-  renderTags(charNames,'charNameTags','removeCharName');
-  renderTags(teamNames,'nameTags','removeName');
-}
-function removeCharName(i){
-  charNames.splice(i,1);
-  renderTags(charNames,'charNameTags','removeCharName');
-  renderTags(teamNames,'nameTags','removeName');
-}
-
-function clearCanvas(canvasId) {
-  const canvas = document.getElementById(canvasId);
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  canvas.style.display = 'none';
-}
-
-function resetTeam() {
-  teamRunId++;
-  setTeamCount(2);
-  document.getElementById('teamMsg').textContent = '';
-  document.getElementById('teamResult').innerHTML = '';
-  clearCanvas('ladderTeam');
-}
-
-function resetCharacters() {
-  charRunId++;
-  selectedChars = new Set(
-    CHARS.map((_, i) => i).filter(i => !['천세', '창결'].includes(CHARS[i].ko))
-  );
-  buildCharGrid();
-  document.getElementById('charMsg').textContent = '';
-  document.getElementById('charResult').innerHTML = '';
-  clearCanvas('ladderChar');
-}
-
-/* ── 캐릭터 그리드 ───────────── */
-function charThumb(c, size=52) {
-  if (c.img) {
-    return `<img src="${c.img}" alt="${c.ko}"
-      style="width:${size}px;height:${size}px;object-fit:cover;border-radius:50%;display:block;margin:0 auto 4px;"
-      onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span style=\\'font-size:${Math.round(size*0.6)}px\\'>${c.icon}</span>');">`;
-  }
-  return `<span class="icon" style="font-size:${Math.round(size*0.6)}px;">${c.icon}</span>`;
-}
-
-function buildCharGrid() {
-  document.getElementById('charGrid').innerHTML = CHARS.map((c,i)=>`
-    <div class="char-card ${selectedChars.has(i)?'selected':''}" id="cc${i}" onclick="toggleChar(${i})">
-      ${charThumb(c, 52)}
-      <div class="ko">${c.ko}</div>
-      <div class="en">${c.en}</div>
-    </div>`).join('');
-}
-function toggleChar(i){
-  if(selectedChars.has(i)){ if(selectedChars.size>1) selectedChars.delete(i); }
-  else selectedChars.add(i);
-  document.getElementById('cc'+i).classList.toggle('selected', selectedChars.has(i));
-}
-function selectAllChars(){ CHARS.forEach((_,i)=>selectedChars.add(i)); buildCharGrid(); }
-function deselectAllChars(){
-  if(selectedChars.size===1) return;
-  const first=[...selectedChars][0];
-  selectedChars.clear(); selectedChars.add(first);
-  buildCharGrid();
-}
-buildCharGrid();
-
-/* ── 유틸 ────────────────────── */
-function shuffle(arr){ return [...arr].sort(()=>Math.random()-0.5); }
-
-function isDark(){
-  return window.matchMedia('(prefers-color-scheme: dark)').matches;
-}
-
-/* ── 사다리 그리기 & 애니메이션 ── */
-function drawLadder(canvasId, tops, bottoms, callback) {
-  const canvas = document.getElementById(canvasId);
-  canvas.style.display = 'block';
-  const n = tops.length;
-  const W = canvas.parentElement.clientWidth - 40;
-  const H = Math.max(260, n * 28 + 140);
-  canvas.width  = W * window.devicePixelRatio;
-  canvas.height = H * window.devicePixelRatio;
-  canvas.style.width  = W + 'px';
-  canvas.style.height = H + 'px';
-  const ctx = canvas.getContext('2d');
-  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-
-  const PAD = Math.min(36, W / (n+1));
-  const usableW = W - PAD*2;
-  const colW = n > 1 ? usableW/(n-1) : 0;
-  const xs = Array.from({length:n},(_,i)=> n===1 ? W/2 : PAD + i*colW);
-  const TOP = 48, BOT = H - 48;
-
-  const dark = isDark();
-  const lineColor    = dark ? '#444' : '#ccc';
-  const textColor    = dark ? '#ddd' : '#222';
-  const hlColors     = ['#2a7de1','#e25252','#27ae60','#e67e22','#8e44ad','#16a085'];
-  const animFrames   = 50;
-
-  // 가로대 생성
-  const rowCount = Math.max(6, n*2+2);
-  const rowH = (BOT-TOP)/rowCount;
-  const rungs = [];
-  const usedRow = Array.from({length:n-1},()=>new Set());
-
-  for(let r=0;r<rowCount;r++){
-    let i=0;
-    while(i<n-1){
-      if(Math.random()<0.4 && !usedRow[i].has(r)){
-        const y = TOP + (r+0.5)*rowH;
-        rungs.push({x1:xs[i], x2:xs[i+1], y});
-        usedRow[i].add(r);
-        if(i+1<n-1) usedRow[i+1].add(r);
-        i+=2;
-      } else i++;
-    }
-  }
-
-  // 경로 추적
-  function trace(startIdx){
-    let pos=startIdx;
-    const path=[{x:xs[pos], y:TOP}];
-    for(let r=0;r<rowCount;r++){
-      const ty=TOP+(r+0.5)*rowH;
-      const hit=rungs.find(rg=>rg.y===ty&&(rg.x1===xs[pos]||rg.x2===xs[pos]));
-      if(hit){ pos = hit.x1===xs[pos] ? xs.indexOf(hit.x2) : xs.indexOf(hit.x1); }
-      path.push({x:xs[pos], y:ty});
-    }
-    path.push({x:xs[pos], y:BOT});
-    return {path, end:pos};
-  }
-  const mapping = Array.from({length:n},(_,i)=>trace(i));
-
-  function drawStatic(){
-    ctx.strokeStyle=lineColor; ctx.lineWidth=1.5;
-    for(let i=0;i<n;i++){
-      ctx.beginPath(); ctx.moveTo(xs[i],TOP); ctx.lineTo(xs[i],BOT); ctx.stroke();
-    }
-    for(const rg of rungs){
-      ctx.beginPath(); ctx.moveTo(rg.x1,rg.y); ctx.lineTo(rg.x2,rg.y); ctx.stroke();
-    }
-    ctx.font=`600 ${Math.min(13, W/(n*2.2)+7)}px sans-serif`;
-    ctx.textAlign='center';
-    ctx.fillStyle=textColor;
-    tops.forEach((t,i)=>ctx.fillText(t, xs[i], TOP-12));
-    bottoms.forEach((b,i)=>ctx.fillText(b, xs[i], BOT+20));
-  }
-
-  let frame=0;
-  function animate(){
-    ctx.clearRect(0,0,W,H);
-    drawStatic();
-    const prog=frame/animFrames;
-    for(let i=0;i<n;i++){
-      const {path}=mapping[i];
-      const pts=Math.floor(prog*(path.length-1));
-      ctx.strokeStyle=hlColors[i%hlColors.length];
-      ctx.lineWidth=2.5;
-      ctx.beginPath();
-      for(let p=0;p<=pts;p++){
-        p===0?ctx.moveTo(path[p].x,path[p].y):ctx.lineTo(path[p].x,path[p].y);
-      }
-      ctx.stroke();
-    }
-    if(frame<animFrames){ frame++; requestAnimationFrame(animate); }
-    else {
-      ctx.clearRect(0,0,W,H);
-      drawStatic();
-      for(let i=0;i<n;i++){
-        const {path}=mapping[i];
-        ctx.strokeStyle=hlColors[i%hlColors.length];
-        ctx.lineWidth=2.5;
-        ctx.beginPath();
-        path.forEach((p,j)=>j===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
-        ctx.stroke();
-      }
-      callback(mapping.map(m=>m.end));
-    }
-  }
-  animate();
-}
-
-/* ── 팀 나누기 ───────────────── */
-function runTeamLadder(){
-  if(teamNames.length<teamCount){
-    document.getElementById('teamMsg').textContent=`${teamCount}팀으로 나누려면 이름을 ${teamCount}명 이상 입력해 주세요`;
-    return;
-  }
-  document.getElementById('teamMsg').textContent='사다리 타는 중... 🎢';
-  document.getElementById('teamResult').innerHTML='';
-  const runId=++teamRunId;
-
-  const n=teamNames.length;
-  const baseSize=Math.floor(n/teamCount);
-  const remainder=n%teamCount;
-  const teamLabels=shuffle(
-    Array.from({length:teamCount},(_,i)=>
-      Array(baseSize+(i<remainder?1:0)).fill(`${i+1}팀`)
-    ).flat()
-  );
-
-  drawLadder('ladderTeam', [...teamNames], teamLabels, (ends)=>{
-    if(runId!==teamRunId) return;
-    document.getElementById('teamMsg').textContent='✅ 결과 확인!';
-    const teams=Array.from({length:teamCount},()=>[]);
-    ends.forEach((endIdx,startIdx)=>{
-      const teamIndex=Number.parseInt(teamLabels[endIdx],10)-1;
-      teams[teamIndex].push(teamNames[startIdx]);
-    });
-    const teamStyles=[
-      {color:'#2a7de1',border:'rgba(42,125,225,0.3)',icon:'🔵'},
-      {color:'#e25252',border:'rgba(226,82,82,0.3)',icon:'🔴'},
-      {color:'#2b9b70',border:'rgba(43,155,112,0.3)',icon:'🟢'}
-    ];
-    document.getElementById('teamResult').innerHTML=`
-      <div class="team-result teams-${teamCount}">
-        ${teams.map((members,i)=>`
-          <div class="team-card" style="border-color:${teamStyles[i].border}">
-            <h3 style="color:${teamStyles[i].color}">${teamStyles[i].icon} ${i+1}팀 (${members.length}명)</h3>
-            ${members.map(n=>`<div class="member">• ${n}</div>`).join('')}
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#9b8ce3"><title>은교의 노래책 · 관리자</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+  <style>
+    :root{--ink:#383249;--muted:#837c96;--lav:#9484e8;--lav2:#ece8ff;--pink:#f28ab2;--pink2:#fff0f5;--mint:#64c6a7;--line:#e7e1f4;--paper:#fff;--shadow:0 14px 35px rgba(79,64,123,.12)}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:linear-gradient(145deg,#f8f6ff,#fff4f8);font-family:'Gowun Dodum',sans-serif;color:var(--ink)}.app{width:min(100%,760px);margin:auto;padding:22px 16px 48px}.hero{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:22px;border-radius:25px;background:linear-gradient(135deg,#dcd5ff,#ffc9db);box-shadow:var(--shadow)}.eyebrow{margin:0 0 7px;color:#655789;font-size:11px;letter-spacing:.08em}.hero h1{margin:0;font:27px 'Jua'}.hero p{margin:7px 0 0;color:#635a73;font-size:12px}.hero .icon{font-size:48px}.toolbar{display:flex;justify-content:space-between;align-items:center;margin:24px 2px 14px;font-size:13px}.toolbar b{font-family:'Jua';font-size:15px}.button{border:0;border-radius:12px;padding:10px 13px;background:var(--lav);color:#fff;font:14px 'Jua';cursor:pointer}.button.secondary{background:#fff;color:#706687;border:1px solid var(--line)}.button.danger{background:#fff0f4;color:#c15b84}.setup{margin:14px 0;padding:12px 14px;border-radius:15px;background:#fff8d7;color:#74633d;font-size:12px}.setup[hidden]{display:none}.grid{display:grid;gap:26px;grid-template-columns:1fr;margin-top:22px}.card{padding:22px;margin-bottom:8px;border:1px solid #fff;border-radius:20px;background:var(--paper);box-shadow:0 7px 20px rgba(79,64,123,.07)}.section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;font:17px 'Jua'}.count{border-radius:99px;padding:4px 8px;background:var(--lav2);font:11px 'Gowun Dodum';color:#6757a9}.form-row{display:grid;gap:10px;grid-template-columns:1fr 1fr auto}.form-row input,.login input{min-width:0;padding:11px;border:1px solid var(--line);border-radius:11px;outline:0;font:14px 'Gowun Dodum'}.form-row input:focus,.login input:focus{border-color:var(--lav)}.list{display:grid;gap:9px}.song,.request{display:flex;align-items:center;gap:10px;padding:11px;border-radius:14px;background:#fcfbff}.symbol{display:grid;place-items:center;width:37px;height:37px;flex:0 0 37px;border-radius:12px;background:var(--pink2);font-size:17px}.info{min-width:0;flex:1}.title{font-weight:bold;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta{margin-top:3px;color:var(--muted);font-size:11px}.request-actions{display:flex;gap:5px}.mini{border:0;border-radius:10px;padding:8px 9px;background:var(--lav2);color:#62539e;font:12px 'Jua';cursor:pointer}.mini.done{background:#dff6ed;color:#2d806a}.mini.delete{background:#fff0f4;color:#c25c82}.empty{padding:24px 10px;text-align:center;border-radius:14px;background:#fcfbff;color:var(--muted);font-size:12px}.login{display:grid;gap:9px;margin-top:12px}.login-actions{display:flex;gap:8px}.toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,20px);opacity:0;background:#383249ee;color:white;border-radius:99px;padding:11px 17px;font:13px 'Jua';pointer-events:none;transition:.2s}.toast.show{transform:translate(-50%,0);opacity:1}.genre-chooser{display:flex;flex-wrap:wrap;gap:6px}.genre-chip{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:99px;padding:6px 12px;font:12px 'Gowun Dodum';cursor:pointer}.genre-chip.active{background:var(--lav);color:#fff;border-color:var(--lav)}.genre-row{display:flex;align-items:center;gap:8px;padding:9px 11px;border-radius:12px;background:#fcfbff}.genre-row input{flex:1;min-width:0;padding:8px;border:1px solid var(--line);border-radius:9px;font:13px 'Gowun Dodum'}.form-hint{margin:8px 2px 0;color:var(--muted);font-size:11px}.settings-grid{display:grid;gap:12px}.settings-field{display:grid;gap:6px}.settings-field label{font:13px 'Jua';color:var(--ink)}.settings-field input,.settings-field textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:11px;outline:0;font:14px 'Gowun Dodum';resize:vertical}.settings-field input:focus,.settings-field textarea:focus{border-color:var(--lav)}.image-preview{display:grid;place-items:center;min-height:150px;border:1px dashed var(--line);border-radius:16px;background:#fcfbff;overflow:hidden;color:var(--muted);font-size:12px}.image-preview img{display:block;width:100%;max-height:240px;object-fit:cover}.profile-preview{min-height:150px}.profile-preview img{width:130px;height:130px;border-radius:50%;object-fit:cover}.section-subtitle{margin-top:6px;padding-top:14px;border-top:1px solid var(--line);font:15px 'Jua'}.toggle-row{display:flex!important;align-items:center;gap:8px}.toggle-row input{width:17px;height:17px;accent-color:var(--lav)}.settings-field input[type=color]{height:44px;padding:4px;cursor:pointer}.range-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.range-row input[type=range]{width:100%}.range-value{min-width:52px;text-align:right;color:var(--muted);font-size:12px}.settings-field select{width:100%;padding:11px;border:1px solid var(--line);border-radius:11px;outline:0;background:#fff;font:14px 'Gowun Dodum'}.settings-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}.admin-search{display:flex;align-items:center;gap:7px;margin:16px 0 6px;padding:4px 5px 4px 12px;border:1px solid var(--line);border-radius:13px;background:#fff}.admin-search span{font-size:13px;opacity:.65}.admin-search input{flex:1;min-width:0;padding:9px 2px;border:0;outline:0;background:transparent;font:13px 'Gowun Dodum'}.search-summary{margin:7px 2px 0;color:var(--muted);font-size:11px}.category-name{font-weight:bold;font-size:13px}.song-check{flex:0 0 auto;width:17px;height:17px;accent-color:var(--lav);cursor:pointer}.select-all-row{display:flex;align-items:center;gap:6px;margin:12px 2px 0;font-size:12px;color:var(--muted)}.bulk-bar{background:#f5f2ff;border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px}.bulk-bar[hidden]{display:none}.bulk-bar-head{display:flex;justify-content:space-between;align-items:center;font:13px 'Jua';color:var(--ink)}.bulk-bar-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.pagination{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:16px}.page-btn{min-width:34px;border:1px solid var(--line);border-radius:10px;padding:7px 9px;background:#fff;color:#706687;font:12px 'Jua';cursor:pointer}.page-btn.active{border-color:var(--lav);background:var(--lav);color:#fff}.page-btn:disabled{opacity:.4;cursor:default}@media(min-width:650px){.grid{grid-template-columns:1fr 1fr;column-gap:24px;row-gap:28px}.songs-card{grid-row:span 2}}
+  </style>
+</head><body><main class="app">
+  <header class="hero"><div><p class="eyebrow">SPOON RADIO · DJ CONSOLE</p><h1>은교의 작업실</h1><p id="userStatus">관리자 계정으로 로그인해 주세요.</p></div></header>
+  <div class="setup" id="setup" hidden>⚙️ Supabase 연결값이 아직 설정되지 않았습니다. 설정안내.md를 먼저 확인해 주세요.</div>
+  <div class="toolbar"><b>관리자 도구</b><button class="button secondary" id="authButton">로그인</button></div>
+  <div class="card" id="authCard" style="margin-top:4px;margin-bottom:24px"><div class="section-title">관리자 로그인</div><div class="login"><input id="email" type="email" autocomplete="email" placeholder="관리자 이메일"><input id="password" type="password" autocomplete="current-password" placeholder="비밀번호"><div class="login-actions"><button class="button" id="loginButton">로그인</button></div></div></div>
+  <div class="grid" id="dashboard" hidden>
+    
+    <section class="card" style="grid-column:1/-1">
+      <div class="section-title">페이지 설정 <span class="count">실시간 반영</span></div>
+      <div class="settings-grid">
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="eyebrowInput">작은 제목</label>
+            <input id="eyebrowInput" placeholder="예: SPOON RADIO SONGBOOK">
           </div>
-        `).join('')}
-      </div>`;
-  });
-}
+          <div class="settings-field">
+            <label for="mainTitleInput">메인 타이틀</label>
+            <input id="mainTitleInput" placeholder="예: 은교의 노래책">
+          </div>
+        </div>
 
-/* ── 캐릭터 배정 ─────────────── */
-function runCharLadder(){
-  if(charNames.length<1){
-    document.getElementById('charMsg').textContent='이름을 1명 이상 입력해 주세요';
-    return;
+        <div class="settings-field">
+          <label for="descriptionInput">소개 문구</label>
+          <textarea id="descriptionInput" rows="3" placeholder="페이지 상단에 표시할 소개 문구"></textarea>
+        </div>
+
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="heroImageInput">상단 대표 이미지</label>
+            <input id="heroImageInput" type="file" accept="image/*">
+            <div class="image-preview" id="heroImagePreview">등록된 이미지가 없습니다.</div>
+            <button class="button secondary" id="removeHeroImageButton" type="button">대표 이미지 삭제</button>
+          </div>
+          <div class="settings-field">
+            <label for="profileImageInput">DJ 프로필 이미지</label>
+            <input id="profileImageInput" type="file" accept="image/*">
+            <div class="image-preview profile-preview" id="profileImagePreview">등록된 이미지가 없습니다.</div>
+            <button class="button secondary" id="removeProfileImageButton" type="button">프로필 이미지 삭제</button>
+          </div>
+        </div>
+
+
+        <div class="section-subtitle">이미지 표현 설정</div>
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="heroFeatherInput">대표 이미지 페더 강도</label>
+            <div class="range-row"><input id="heroFeatherInput" type="range" min="0" max="100" value="0"><span class="range-value" id="heroFeatherValue">0%</span></div>
+          </div>
+          <div class="settings-field">
+            <label for="heroRadiusInput">대표 이미지 모서리 둥글기</label>
+            <div class="range-row"><input id="heroRadiusInput" type="range" min="0" max="60" value="24"><span class="range-value" id="heroRadiusValue">24px</span></div>
+          </div>
+        </div>
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="heroHeightInput">대표 이미지 높이</label>
+            <div class="range-row"><input id="heroHeightInput" type="range" min="140" max="500" value="260"><span class="range-value" id="heroHeightValue">260px</span></div>
+          </div>
+          <div class="settings-field">
+            <label for="heroFitInput">대표 이미지 맞춤 방식</label>
+            <select id="heroFitInput"><option value="cover">영역 채우기</option><option value="contain">전체 이미지 보기</option><option value="fill">영역에 맞추기</option></select>
+          </div>
+        </div>
+
+        <div class="section-subtitle">레이아웃 위치 설정</div>
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="heroPositionInput">대표 이미지 위치</label>
+            <select id="heroPositionInput"><option value="top">페이지 최상단</option><option value="below_header">제목 아래</option><option value="above_search">검색창 위</option><option value="bottom">페이지 하단</option></select>
+          </div>
+          <div class="settings-field">
+            <label for="profilePositionInput">프로필 이미지 위치</label>
+            <select id="profilePositionInput"><option value="header">제목 영역</option><option value="above_title">제목 위</option><option value="center">가운데 단독 표시</option><option value="hidden">숨김</option></select>
+          </div>
+        </div>
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="noticePositionInput">공지 위치</label>
+            <select id="noticePositionInput"><option value="below_header">제목 아래</option><option value="above_search">검색창 위</option><option value="below_search">검색창 아래</option><option value="bottom">페이지 하단</option></select>
+          </div>
+          <div class="settings-field">
+            <label for="linksPositionInput">링크 버튼 위치</label>
+            <select id="linksPositionInput"><option value="below_header">소개 문구 아래</option><option value="above_search">검색창 위</option><option value="bottom">페이지 하단</option></select>
+          </div>
+        </div>
+        <div class="settings-field">
+          <label for="contentAlignInput">상단 콘텐츠 정렬</label>
+          <select id="contentAlignInput"><option value="left">왼쪽</option><option value="center">가운데</option><option value="right">오른쪽</option></select>
+        </div>
+
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="backgroundColorInput">배경색</label>
+            <input id="backgroundColorInput" type="color" value="#fff5f8">
+          </div>
+          <div class="settings-field">
+            <label for="accentColorInput">메인 색상</label>
+            <input id="accentColorInput" type="color" value="#f584ad">
+          </div>
+        </div>
+
+        <div class="settings-field">
+          <label class="toggle-row"><input id="noticeEnabledInput" type="checkbox"> 공지사항 표시</label>
+          <textarea id="noticeTextInput" rows="3" placeholder="공지사항 내용을 입력해 주세요"></textarea>
+        </div>
+
+        <div class="section-subtitle">링크 설정</div>
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="spoonUrlInput">스푼 프로필 주소</label>
+            <input id="spoonUrlInput" type="url" placeholder="https://...">
+          </div>
+          <div class="settings-field">
+            <label for="youtubeUrlInput">유튜브 주소</label>
+            <input id="youtubeUrlInput" type="url" placeholder="https://...">
+          </div>
+        </div>
+
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="instagramUrlInput">인스타그램 주소</label>
+            <input id="instagramUrlInput" type="url" placeholder="https://...">
+          </div>
+          <div class="settings-field">
+            <label for="supportUrlInput">후원 링크</label>
+            <input id="supportUrlInput" type="url" placeholder="https://...">
+          </div>
+        </div>
+
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="requestUrlInput">신청곡 링크</label>
+            <input id="requestUrlInput" type="url" placeholder="https://...">
+          </div>
+          <div class="settings-field">
+            <label for="requestButtonTextInput">신청 버튼 문구</label>
+            <input id="requestButtonTextInput" placeholder="예: 신청곡 보내기">
+          </div>
+        </div>
+
+        <div class="settings-actions">
+          <button class="button" id="savePageSettingsButton" type="button">페이지 설정 저장</button>
+        </div>
+        <div class="form-hint">저장 후 일반 이용자 페이지에 실시간으로 반영됩니다.</div>
+      </div>
+    </section>
+    <section class="card songs-card"><div class="section-title">노래책 <span class="count" id="songCount">0곡</span></div><div class="form-row" style="grid-template-columns:1fr 1fr"><input id="titleInput" placeholder="곡명"><input id="artistInput" placeholder="가수"></div><div class="form-hint">카테고리 (여러 개 선택 가능)</div><div id="genreChooser" class="genre-chooser" style="margin-top:6px"></div><div class="form-row" style="grid-template-columns:1fr auto;margin-top:10px"><span></span><div style="display:flex;gap:6px;justify-content:flex-end"><button class="button secondary" id="cancelEditButton" hidden>취소</button><button class="button" id="addButton">추가</button></div></div><label class="admin-search"><span>🔎</span><input id="adminSongSearch" type="search" autocomplete="off" placeholder="등록한 곡명 또는 가수 검색"></label><div class="search-summary" id="searchSummary">전체 곡을 표시 중입니다.</div><label class="select-all-row"><input type="checkbox" id="selectAllCheckbox"> 검색 결과 전체 선택 (체크한 곡 카테고리 일괄 변경)</label><div id="bulkBar" class="bulk-bar" hidden><div class="bulk-bar-head"><span id="bulkCount">0곡 선택됨</span><button class="mini" id="bulkClearButton">선택 해제</button></div><div class="form-hint">적용할 카테고리 선택</div><div id="bulkGenreChooser" class="genre-chooser" style="margin-top:6px"></div><div class="bulk-bar-actions"><button class="button secondary" id="bulkAddButton">선택 카테고리 추가</button><button class="button secondary" id="bulkRemoveButton">선택 카테고리 제거</button><button class="button" id="bulkReplaceButton">카테고리 교체</button></div></div><div class="list" id="songs" style="margin-top:16px"></div><div class="pagination" id="songPagination" aria-label="노래 목록 페이지"></div></section>
+    <section class="card" id="genreCard"><div class="section-title">카테고리 관리 <span class="count" id="genreCount">0개</span></div><div class="form-row" style="grid-template-columns:1fr auto"><input id="newGenreInput" placeholder="새 카테고리 이름"><button class="button" id="addGenreButton">추가</button></div><label class="admin-search" style="margin-top:12px"><span>🔎</span><input id="adminGenreSearch" type="search" autocomplete="off" placeholder="등록한 카테고리 검색"></label><div class="search-summary" id="genreSearchSummary">전체 카테고리를 표시 중입니다.</div><div class="list" id="genreList" style="margin-top:16px"></div></section>
+  </div>
+</main><div class="toast" id="toast"></div>
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+  // 시청자 페이지와 같은 값으로 바꾸세요.
+  const SUPABASE_URL='https://bxceghrdlmkiyoigycwb.supabase.co', SUPABASE_ANON_KEY='sb_publishable_pJdG6nCDAkOa2QoNxao3RQ_vUcfoQ1S';
+  const configured=!SUPABASE_URL.startsWith('YOUR_')&&!SUPABASE_ANON_KEY.startsWith('YOUR_'); const supabase=configured?createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null; const $=s=>document.querySelector(s);
+  let songs=[]; let genres=[]; let selectedGenres=new Set(); let editingSongId=null; let editingGenreId=null; let selectedSongIds=new Set(); let bulkGenres=new Set(); let songSearchQuery=''; let genreSearchQuery=''; let pageSettings=null; let songPage=1; const SONGS_PER_PAGE=10;
+  const toast=m=>{const e=$('#toast');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1900)};const e=(t,c,x)=>{const n=document.createElement(t);if(c)n.className=c;if(x!==undefined)n.textContent=x;return n};
+  function songGenres(s){return (s.genres&&s.genres.length)?s.genres:(s.genre?[s.genre]:[]);}
+  function item(song){const gs=songGenres(song);const card=e('article','song');const check=document.createElement('input');check.type='checkbox';check.className='song-check';check.checked=selectedSongIds.has(song.id);check.onchange=()=>{if(check.checked)selectedSongIds.add(song.id);else selectedSongIds.delete(song.id);renderBulkBar();syncSelectAll()};const sym=e('div','symbol',gs.includes('피아노연주곡')?'🎹':'🎵'),info=e('div','info'),title=e('div','title',song.title),meta=e('div','meta',(song.artist||'가수 미입력')+(gs.length?' · '+gs.join(', '):'')),actions=e('div','request-actions'),editBtn=e('button','mini','수정'),del=e('button','mini delete','삭제');editBtn.onclick=()=>startEdit(song);del.onclick=()=>deleteSong(song);actions.append(editBtn,del);info.append(title,meta);card.append(check,sym,info,actions);return card}
+  function filteredSongs(){const q=songSearchQuery.trim().toLowerCase();if(!q)return songs;return songs.filter(s=>[s.title,s.artist].filter(Boolean).join(' ').toLowerCase().includes(q))}
+  function filteredGenres(){const q=genreSearchQuery.trim().toLowerCase();if(!q)return genres;return genres.filter(g=>(g.name||'').toLowerCase().includes(q))}
+  function syncSelectAll(){const cb=$('#selectAllCheckbox');if(!cb)return;const visible=filteredSongs();cb.checked=visible.length>0&&visible.every(s=>selectedSongIds.has(s.id))}
+  function renderBulkGenreChooser(){const box=$('#bulkGenreChooser');box.replaceChildren();genres.forEach(g=>{const chip=e('button','genre-chip'+(bulkGenres.has(g.name)?' active':''),g.name);chip.type='button';chip.onclick=()=>{if(bulkGenres.has(g.name))bulkGenres.delete(g.name);else bulkGenres.add(g.name);renderBulkGenreChooser()};box.append(chip)})}
+  function renderBulkBar(){const bar=$('#bulkBar');const n=selectedSongIds.size;bar.hidden=n===0;$('#bulkCount').textContent=n+'곡 선택됨'}
+  function renderPagination(total){const box=$('#songPagination');const totalPages=Math.ceil(total/SONGS_PER_PAGE);box.replaceChildren();if(totalPages<=1)return;const add=(label,page,disabled,active=false)=>{const b=e('button','page-btn'+(active?' active':''),label);b.type='button';b.disabled=disabled;b.onclick=()=>{songPage=page;render();document.querySelector('.songs-card').scrollIntoView({behavior:'smooth',block:'start'})};box.append(b)};add('이전',songPage-1,songPage===1);for(let p=1;p<=totalPages;p++)add(String(p),p,false,p===songPage);add('다음',songPage+1,songPage===totalPages)}
+  function render(){const songBox=$('#songs');const visible=filteredSongs();const totalPages=Math.max(1,Math.ceil(visible.length/SONGS_PER_PAGE));songPage=Math.min(Math.max(1,songPage),totalPages);const pageSongs=visible.slice((songPage-1)*SONGS_PER_PAGE,songPage*SONGS_PER_PAGE);songBox.replaceChildren(...pageSongs.map(item));if(!songs.length)songBox.append(e('div','empty','아직 등록된 노래가 없어요.'));else if(!visible.length)songBox.append(e('div','empty','검색 결과가 없어요. 다른 곡명이나 가수명으로 찾아보세요.'));$('#songCount').textContent=songs.length+'곡';const summary=$('#searchSummary');if(summary)summary.textContent=songSearchQuery?('검색 결과 '+visible.length+'곡 / 전체 '+songs.length+'곡'):'전체 '+songs.length+'곡을 표시 중입니다.';renderPagination(visible.length);renderBulkBar();syncSelectAll()}
+  async function load(){const {data,error}=await supabase.from('songs').select('*').order('created_at');if(error){toast('데이터를 불러오지 못했어요');return}songs=data;render()}
+  function renderGenreChooser(){const box=$('#genreChooser');box.replaceChildren();genres.forEach(g=>{const chip=e('button','genre-chip'+(selectedGenres.has(g.name)?' active':''),g.name);chip.type='button';chip.onclick=()=>{if(selectedGenres.has(g.name))selectedGenres.delete(g.name);else selectedGenres.add(g.name);renderGenreChooser()};box.append(chip)})}
+  function renderGenreManage(){const box=$('#genreList');const visible=filteredGenres();box.replaceChildren();$('#genreCount').textContent=genres.length+'개';const summary=$('#genreSearchSummary');if(summary)summary.textContent=genreSearchQuery?('검색 결과 '+visible.length+'개 / 전체 '+genres.length+'개'):'전체 '+genres.length+'개를 표시 중입니다.';if(!genres.length)box.append(e('div','empty','등록된 카테고리가 없어요.'));else if(!visible.length)box.append(e('div','empty','검색 결과가 없어요. 다른 카테고리 이름으로 찾아보세요.'));visible.forEach(g=>{const row=e('div','genre-row');if(editingGenreId===g.id){const input=document.createElement('input');input.value=g.name;const save=e('button','mini','저장');save.onclick=()=>saveGenreName(g,input.value.trim());const cancel=e('button','mini','취소');cancel.onclick=()=>{editingGenreId=null;renderGenreManage()};row.append(input,save,cancel);}else{const genreIndex=genres.findIndex(item=>item.id===g.id);const name=e('div','info category-name',g.name);const upBtn=e('button','mini','↑');upBtn.type='button';upBtn.title='위로 이동';upBtn.disabled=genreIndex<=0;upBtn.onclick=()=>moveGenre(g,-1);const downBtn=e('button','mini','↓');downBtn.type='button';downBtn.title='아래로 이동';downBtn.disabled=genreIndex<0||genreIndex>=genres.length-1;downBtn.onclick=()=>moveGenre(g,1);const editBtn=e('button','mini','수정');editBtn.onclick=()=>{editingGenreId=g.id;renderGenreManage()};const delBtn=e('button','mini delete','삭제');delBtn.onclick=()=>deleteGenre(g);row.append(name,upBtn,downBtn,editBtn,delBtn);}box.append(row)})}
+  async function moveGenre(g,direction){const currentIndex=genres.findIndex(item=>item.id===g.id);const targetIndex=currentIndex+direction;if(currentIndex<0||targetIndex<0||targetIndex>=genres.length)return;const target=genres[targetIndex];const currentOrder=Number.isFinite(Number(g.sort_order))?Number(g.sort_order):currentIndex;const targetOrder=Number.isFinite(Number(target.sort_order))?Number(target.sort_order):targetIndex;const numericOrders=genres.map(item=>Number(item.sort_order)).filter(Number.isFinite);const temporaryOrder=Math.min(0,...numericOrders)-1;let {error}=await supabase.from('genres').update({sort_order:temporaryOrder}).eq('id',g.id);if(error){toast('카테고리 순서를 변경하지 못했어요');return}({error}=await supabase.from('genres').update({sort_order:currentOrder}).eq('id',target.id));if(error){await supabase.from('genres').update({sort_order:currentOrder}).eq('id',g.id);toast('카테고리 순서를 변경하지 못했어요');await loadGenres();return}({error}=await supabase.from('genres').update({sort_order:targetOrder}).eq('id',g.id));if(error){await supabase.from('genres').update({sort_order:targetOrder}).eq('id',target.id);await supabase.from('genres').update({sort_order:currentOrder}).eq('id',g.id);toast('카테고리 순서를 변경하지 못했어요');await loadGenres();return}await loadGenres();toast('카테고리 순서를 변경했어요')}
+  async function loadGenres(){const {data,error}=await supabase.from('genres').select('*').order('sort_order');if(error){toast('카테고리를 불러오지 못했어요');return}genres=data||[];renderGenreChooser();renderGenreManage();renderBulkGenreChooser()}
+  async function addGenre(){const name=$('#newGenreInput').value.trim();if(!name){toast('카테고리 이름을 입력해 주세요');return}const maxOrder=genres.length?Math.max(...genres.map(g=>g.sort_order)):-1;const {error}=await supabase.from('genres').insert({name,sort_order:maxOrder+1});if(error){toast('이미 있는 이름이거나 추가 권한이 없어요');return}$('#newGenreInput').value='';await loadGenres()}
+  async function saveGenreName(g,newName){if(!newName){toast('이름을 입력해 주세요');return}if(newName===g.name){editingGenreId=null;renderGenreManage();return}const oldName=g.name;const {error}=await supabase.from('genres').update({name:newName}).eq('id',g.id);if(error){toast('이미 있는 이름이거나 수정 권한이 없어요');return}const affected=songs.filter(s=>songGenres(s).includes(oldName));for(const s of affected){const updated=[...new Set(songGenres(s).map(x=>x===oldName?newName:x))];const {error:updateError}=await supabase.from('songs').update({genres:updated}).eq('id',s.id);if(updateError){toast('카테고리명은 변경됐지만 일부 곡 반영에 실패했어요');break}}if(selectedGenres.delete(oldName))selectedGenres.add(newName);if(bulkGenres.delete(oldName))bulkGenres.add(newName);editingGenreId=null;await loadGenres();await load();toast('카테고리 이름을 수정했어요')}
+  async function deleteGenre(g){if(!confirm('"'+g.name+'" 카테고리를 삭제할까요? 이 태그가 붙은 곡에서도 함께 사라져요.'))return;const affected=songs.filter(s=>songGenres(s).includes(g.name));for(const s of affected){const updated=songGenres(s).filter(x=>x!==g.name);const {error:updateError}=await supabase.from('songs').update({genres:updated}).eq('id',s.id);if(updateError){toast('곡에서 카테고리를 제거하지 못했어요');return}}const {error}=await supabase.from('genres').delete().eq('id',g.id);if(error){toast('삭제할 권한이 없어요');return}selectedGenres.delete(g.name);bulkGenres.delete(g.name);await loadGenres();await load();toast('카테고리를 삭제했어요')}
+  function startEdit(song){editingSongId=song.id;$('#titleInput').value=song.title;$('#artistInput').value=song.artist||'';selectedGenres=new Set(songGenres(song));renderGenreChooser();$('#addButton').textContent='저장';$('#cancelEditButton').hidden=false;$('#titleInput').scrollIntoView({behavior:'smooth',block:'center'})}
+  function resetForm(){editingSongId=null;$('#titleInput').value='';$('#artistInput').value='';selectedGenres=new Set();renderGenreChooser();$('#addButton').textContent='추가';$('#cancelEditButton').hidden=true}
+  async function addSong(){const title=$('#titleInput').value.trim(),artist=$('#artistInput').value.trim(),genresArr=[...selectedGenres];if(!title){toast('곡명을 입력해 주세요');return}if(editingSongId){const {error}=await supabase.from('songs').update({title,artist,genres:genresArr}).eq('id',editingSongId);if(error){toast('수정할 권한이 없어요');return}toast('수정했어요')}else{const {error}=await supabase.from('songs').insert({title,artist,genres:genresArr});if(error){toast('곡을 추가할 권한이 없어요');return}}resetForm();await load()}
+  async function deleteSong(song){if(!confirm('“'+song.title+'”을(를) 노래책에서 삭제할까요?'))return;const {error}=await supabase.from('songs').delete().eq('id',song.id);if(error){toast('삭제할 권한이 없어요');return}selectedSongIds.delete(song.id);if(editingSongId===song.id)resetForm();await load()}
+  async function bulkApply(mode){if(!selectedSongIds.size){toast('선택된 곡이 없어요');return}if(!bulkGenres.size){toast('적용할 카테고리를 선택해 주세요');return}const targets=songs.filter(s=>selectedSongIds.has(s.id));for(const s of targets){const current=songGenres(s);let updated;if(mode==='add')updated=[...new Set([...current,...bulkGenres])];else if(mode==='remove')updated=current.filter(g=>!bulkGenres.has(g));else updated=[...bulkGenres];const {error}=await supabase.from('songs').update({genres:updated}).eq('id',s.id);if(error){toast('일부 곡은 수정 권한이 없어요');return}}toast('일괄 적용했어요');selectedSongIds.clear();bulkGenres.clear();renderBulkGenreChooser();await load()}
+  
+
+  function renderImagePreview(selector,url,round=false){
+    const box=$(selector);
+    box.replaceChildren();
+    if(!url){box.textContent='등록된 이미지가 없습니다.';return}
+    const img=document.createElement('img');
+    img.src=url;
+    img.alt='이미지 미리보기';
+    if(round)img.style.borderRadius='50%';
+    img.onerror=()=>{box.textContent='이미지를 불러오지 못했어요.'};
+    box.append(img);
   }
-  const pool=[...selectedChars].map(i=>CHARS[i]);
-  if(pool.length<charNames.length){
-    document.getElementById('charMsg').textContent=`선택한 캐릭터(${pool.length}개)가 참여자(${charNames.length}명)보다 적어요`;
-    return;
-  }
-  document.getElementById('charMsg').textContent='';
-  document.getElementById('charResult').innerHTML='';
-  const runId=++charRunId;
 
-  if(charNames.length===1){
-    runRoulette(charNames[0], pool);
-    return;
-  }
+  const defaultPageSettings={
+    id:1,
+    eyebrow:'SPOON RADIO SONGBOOK',
+    title:'은교의 노래책',
+    description:'관리자가 등록한 곡을 검색하고 확인할 수 있어요.',
+    hero_image_url:'',
+    profile_image_url:'',
+    notice_enabled:false,
+    notice_text:'',
+    background_color:'#fff5f8',
+    accent_color:'#f584ad',
+    spoon_url:'',
+    youtube_url:'',
+    instagram_url:'',
+    support_url:'',
+    request_url:'',
+    request_button_text:'신청곡 보내기',hero_feather:0,hero_radius:24,hero_height:260,hero_fit:'cover',hero_position:'top',profile_position:'header',notice_position:'below_header',links_position:'below_header',content_align:'left'
+  };
 
-  document.getElementById('charMsg').textContent='사다리 타는 중... 🎢';
-  const assigned=shuffle(pool).slice(0,charNames.length);
-  const topLabels=[...charNames];
-  const botLabels=assigned.map(c=>`${c.icon}${c.ko}`);
-
-  drawLadder('ladderChar', topLabels, botLabels, (ends)=>{
-    if(runId!==charRunId) return;
-    document.getElementById('charMsg').textContent='✅ 캐릭터 배정 완료!';
-    const rows=ends.map((endIdx,startIdx)=>{
-      const c=assigned[endIdx];
-      return `<div class="result-row">
-        <span class="label">${charNames[startIdx]}</span>
-        <span class="val">${c.icon} ${c.ko}</span>
-        <span class="sub">(${c.en} · ${c.role})</span>
-      </div>`;
-    });
-    document.getElementById('charResult').innerHTML=`<div class="result-box">${rows.join('')}</div>`;
-  });
-}
-
-/* ── 바로 랜덤 뽑기 (최대 6명) ── */
-function runRandomDirect(){
-  if(charNames.length<1){
-    document.getElementById('charMsg').textContent='이름을 1명 이상 입력해 주세요';
-    return;
-  }
-  if(charNames.length>6){
-    document.getElementById('charMsg').textContent='최대 6명까지 가능해요';
-    return;
-  }
-  const pool=[...selectedChars].map(i=>CHARS[i]);
-  if(pool.length<charNames.length){
-    document.getElementById('charMsg').textContent=`선택한 캐릭터(${pool.length}개)가 참여자(${charNames.length}명)보다 적어요`;
-    return;
+  async function loadPageSettings(){
+    const {data,error}=await supabase.from('page_settings').select('*').eq('id',1).maybeSingle();
+    if(error){toast('페이지 설정을 불러오지 못했어요');return}
+    pageSettings={...defaultPageSettings,...(data||{})};
+    $('#eyebrowInput').value=pageSettings.eyebrow||'';
+    $('#mainTitleInput').value=pageSettings.title||'';
+    $('#descriptionInput').value=pageSettings.description||'';
+    $('#backgroundColorInput').value=pageSettings.background_color||'#fff5f8';
+    $('#accentColorInput').value=pageSettings.accent_color||'#f584ad';
+    $('#noticeEnabledInput').checked=pageSettings.notice_enabled===true;
+    $('#noticeTextInput').value=pageSettings.notice_text||'';
+    $('#spoonUrlInput').value=pageSettings.spoon_url||'';
+    $('#youtubeUrlInput').value=pageSettings.youtube_url||'';
+    $('#instagramUrlInput').value=pageSettings.instagram_url||'';
+    $('#supportUrlInput').value=pageSettings.support_url||'';
+    $('#requestUrlInput').value=pageSettings.request_url||'';
+    $('#requestButtonTextInput').value=pageSettings.request_button_text||'신청곡 보내기';$('#heroFeatherInput').value=pageSettings.hero_feather??0;$('#heroFeatherValue').textContent=(pageSettings.hero_feather??0)+'%';$('#heroRadiusInput').value=pageSettings.hero_radius??24;$('#heroRadiusValue').textContent=(pageSettings.hero_radius??24)+'px';$('#heroHeightInput').value=pageSettings.hero_height??260;$('#heroHeightValue').textContent=(pageSettings.hero_height??260)+'px';$('#heroFitInput').value=pageSettings.hero_fit||'cover';$('#heroPositionInput').value=pageSettings.hero_position||'top';$('#profilePositionInput').value=pageSettings.profile_position||'header';$('#noticePositionInput').value=pageSettings.notice_position||'below_header';$('#linksPositionInput').value=pageSettings.links_position||'below_header';$('#contentAlignInput').value=pageSettings.content_align||'left';
+    renderImagePreview('#heroImagePreview',pageSettings.hero_image_url||'');
+    renderImagePreview('#profileImagePreview',pageSettings.profile_image_url||'',true);
   }
 
-  document.getElementById('ladderChar').style.display='none';
-  document.getElementById('charMsg').textContent='🎰 뽑는 중...';
-  document.getElementById('charResult').innerHTML='';
-  const runId=++charRunId;
+  async function uploadImage(file,prefix){
+    if(!file)return '';
+    if(!file.type.startsWith('image/'))throw new Error('이미지 파일만 업로드할 수 있어요');
+    if(file.size>5*1024*1024)throw new Error('이미지는 5MB 이하만 업로드할 수 있어요');
+    const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+    const path=prefix+'/'+prefix+'-'+Date.now()+'.'+ext;
+    const {error}=await supabase.storage.from('songbook-images').upload(path,file,{upsert:true});
+    if(error)throw error;
+    const {data}=supabase.storage.from('songbook-images').getPublicUrl(path);
+    return data.publicUrl;
+  }
 
-  const assigned=shuffle(pool).slice(0,charNames.length);
-  const cards=charNames.map((n,i)=>({name:n, char:null, pool:shuffle(pool), tick:0}));
+  function validUrlOrEmpty(value){
+    const v=value.trim();
+    if(!v)return '';
+    try{return new URL(v).toString()}catch(e){throw new Error('링크 주소는 https:// 형식으로 입력해 주세요')}
+  }
 
-  const totalTicks=22;
-  let frame=0;
+  async function savePageSettings(){
+    const button=$('#savePageSettingsButton');
+    button.disabled=true;
+    try{
+      const heroFile=$('#heroImageInput').files[0];
+      const profileFile=$('#profileImageInput').files[0];
+      let heroImageUrl=pageSettings?.hero_image_url||'';
+      let profileImageUrl=pageSettings?.profile_image_url||'';
+      if(heroFile)heroImageUrl=await uploadImage(heroFile,'hero');
+      if(profileFile)profileImageUrl=await uploadImage(profileFile,'profile');
 
-  const html=charNames.map((n,i)=>`
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;text-align:center;">
-      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:500;">${n}</div>
-      <div id="ri${i}" style="font-size:36px;line-height:1;transition:transform 0.08s;min-height:56px;display:flex;align-items:center;justify-content:center;">❓</div>
-      <div id="rk${i}" style="font-size:13px;font-weight:700;margin-top:8px;min-height:18px;"></div>
-    </div>`).join('');
+      const payload={
+        id:1,
+        eyebrow:$('#eyebrowInput').value.trim(),
+        title:$('#mainTitleInput').value.trim(),
+        description:$('#descriptionInput').value.trim(),
+        hero_image_url:heroImageUrl,
+        profile_image_url:profileImageUrl,
+        notice_enabled:$('#noticeEnabledInput').checked,
+        notice_text:$('#noticeTextInput').value.trim(),
+        background_color:$('#backgroundColorInput').value,
+        accent_color:$('#accentColorInput').value,
+        spoon_url:validUrlOrEmpty($('#spoonUrlInput').value),
+        youtube_url:validUrlOrEmpty($('#youtubeUrlInput').value),
+        instagram_url:validUrlOrEmpty($('#instagramUrlInput').value),
+        support_url:validUrlOrEmpty($('#supportUrlInput').value),
+        request_url:validUrlOrEmpty($('#requestUrlInput').value),
+        request_button_text:$('#requestButtonTextInput').value.trim()||'신청곡 보내기',hero_feather:Number($('#heroFeatherInput').value),hero_radius:Number($('#heroRadiusInput').value),hero_height:Number($('#heroHeightInput').value),hero_fit:$('#heroFitInput').value,hero_position:$('#heroPositionInput').value,profile_position:$('#profilePositionInput').value,notice_position:$('#noticePositionInput').value,links_position:$('#linksPositionInput').value,content_align:$('#contentAlignInput').value,
+        updated_at:new Date().toISOString()
+      };
 
-  document.getElementById('charResult').innerHTML=`
-    <div style="display:grid;grid-template-columns:repeat(${Math.min(charNames.length,3)},1fr);gap:10px;margin-top:14px;">${html}</div>`;
-
-  function tick(){
-    if(runId!==charRunId) return;
-    const done=frame>=totalTicks;
-    for(let i=0;i<charNames.length;i++){
-      const iconEl=document.getElementById('ri'+i);
-      const koEl=document.getElementById('rk'+i);
-      if(done){
-        const c=assigned[i];
-        iconEl.innerHTML=`<img src="${c.img}" alt="${c.ko}"
-          style="width:56px;height:56px;object-fit:cover;border-radius:50%;"
-          onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span style=\\'font-size:36px\\'>${c.icon}</span>');">`;
-        koEl.textContent=c.ko;
-        iconEl.style.transform='scale(1.25)';
-        iconEl.style.transition='transform 0.2s';
-        setTimeout(()=>iconEl.style.transform='scale(1)',250);
-      } else {
-        const c=pool[(frame+i*3)%pool.length];
-        iconEl.textContent=c.icon;
-        koEl.textContent='';
-      }
+      const {error}=await supabase.from('page_settings').upsert(payload,{onConflict:'id'});
+      if(error)throw error;
+      pageSettings=payload;
+      $('#heroImageInput').value='';
+      $('#profileImageInput').value='';
+      renderImagePreview('#heroImagePreview',heroImageUrl);
+      renderImagePreview('#profileImagePreview',profileImageUrl,true);
+      toast('페이지 설정을 저장했어요');
+    }catch(err){
+      toast(err.message||'페이지 설정 저장에 실패했어요');
+    }finally{
+      button.disabled=false;
     }
-    if(done){
-      document.getElementById('charMsg').textContent='✅ 캐릭터 배정 완료!';
-    } else {
-      frame++;
-      const delay=frame>totalTicks*0.6 ? 80+frame*10 : 60;
-      setTimeout(tick, delay);
-    }
   }
-  tick();
-}
 
-/* ── 1명 전용 룰렛 ───────────── */
-function runRoulette(name, pool){
-  const canvas=document.getElementById('ladderChar');
-  canvas.style.display='none';
-  const msgEl=document.getElementById('charMsg');
-  const resultEl=document.getElementById('charResult');
-  const runId=++charRunId;
-
-  const final=shuffle(pool)[0];
-  let tick=0;
-  const totalTicks=28;
-  let delay=60;
-
-  resultEl.innerHTML=`
-    <div style="text-align:center;padding:28px 16px;background:var(--surface2);border-radius:var(--radius-sm);margin-top:14px;">
-      <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">${name}의 캐릭터</div>
-      <div id="rouletteIcon" style="font-size:52px;line-height:1.2;transition:transform 0.08s;min-height:72px;display:flex;align-items:center;justify-content:center;">❓</div>
-      <div id="rouletteKo" style="font-size:20px;font-weight:700;margin-top:10px;min-height:28px;"></div>
-      <div id="rouletteEn" style="font-size:13px;color:var(--text2);margin-top:4px;min-height:18px;"></div>
-    </div>`;
-
-  const iconEl=document.getElementById('rouletteIcon');
-  const koEl=document.getElementById('rouletteKo');
-  const enEl=document.getElementById('rouletteEn');
-
-  function spin(){
-    if(runId!==charRunId) return;
-    const cur=pool[tick%pool.length];
-    iconEl.style.transform='scale(1.15)';
-    iconEl.textContent=cur.icon;
-    koEl.textContent=cur.ko;
-    enEl.textContent='';
-    setTimeout(()=>iconEl.style.transform='scale(1)',60);
-    tick++;
-    if(tick<totalTicks){
-      delay = tick > totalTicks*0.6 ? delay*1.18 : delay;
-      setTimeout(spin, delay);
-    } else {
-      iconEl.innerHTML=`<img src="${final.img}" alt="${final.ko}"
-        style="width:72px;height:72px;object-fit:cover;border-radius:50%;transition:transform 0.2s;"
-        onerror="this.outerHTML='<span style=\\'font-size:52px\\'>${final.icon}</span>'">`;
-      koEl.textContent=final.ko;
-      enEl.textContent=`${final.en} · ${final.role}`;
-      iconEl.style.transform='scale(1.3)';
-      iconEl.style.transition='transform 0.25s';
-      setTimeout(()=>iconEl.style.transform='scale(1)',300);
-      msgEl.textContent='✅ 캐릭터 결정!';
+  async function updateImageField(field){
+    const label=field==='hero_image_url'?'대표 이미지':'프로필 이미지';
+    if(!confirm('등록된 '+label+'를 삭제할까요?'))return;
+    const payload={...defaultPageSettings,...pageSettings,[field]:'',updated_at:new Date().toISOString()};
+    const {error}=await supabase.from('page_settings').upsert(payload,{onConflict:'id'});
+    if(error){toast(label+'를 삭제하지 못했어요');return}
+    pageSettings=payload;
+    if(field==='hero_image_url'){
+      $('#heroImageInput').value='';
+      renderImagePreview('#heroImagePreview','');
+    }else{
+      $('#profileImageInput').value='';
+      renderImagePreview('#profileImagePreview','',true);
     }
+    toast(label+'를 삭제했어요');
   }
-  msgEl.textContent='🎰 뽑는 중...';
-  spin();
-}
-</script>
-</body>
-</html>
+
+async function refreshAuth(){if(!configured){$('#setup').hidden=false;return}const {data:{user}}=await supabase.auth.getUser();let active=false;if(user){const {data}=await supabase.rpc('is_songbook_admin');active=data===true}$('#authCard').hidden=active;$('#dashboard').hidden=!active;$('#authButton').textContent=active?'로그아웃':'로그인';$('#userStatus').textContent=active?(user.email+' · 관리 중'):(user?'관리자 권한이 없는 계정입니다.':'관리자 계정으로 로그인해 주세요.');if(active){await loadPageSettings();await loadGenres();load()}}
+  $('#loginButton').onclick=async()=>{if(!configured){toast('연결 설정이 먼저 필요해요');return}const {error}=await supabase.auth.signInWithPassword({email:$('#email').value.trim(),password:$('#password').value});if(error){toast('로그인 정보를 확인해 주세요');return}await refreshAuth();if($('#dashboard').hidden)toast('관리자 권한이 없는 계정이에요')};$('#authButton').onclick=async()=>{if(!configured)return;if((await supabase.auth.getUser()).data.user){await supabase.auth.signOut();toast('로그아웃했어요');refreshAuth()}else $('#email').focus()};
+  $('#addButton').onclick=addSong;$('#cancelEditButton').onclick=resetForm;$('#titleInput').addEventListener('keydown',x=>{if(x.key==='Enter')addSong()});
+  $('#adminSongSearch').addEventListener('input',ev=>{songSearchQuery=ev.target.value;songPage=1;render()});
+  $('#adminGenreSearch').addEventListener('input',ev=>{genreSearchQuery=ev.target.value;renderGenreManage()});
+  $('#addGenreButton').onclick=addGenre;$('#newGenreInput').addEventListener('keydown',x=>{if(x.key==='Enter')addGenre()});
+  $('#selectAllCheckbox').onchange=ev=>{const visible=filteredSongs();if(ev.target.checked)visible.forEach(s=>selectedSongIds.add(s.id));else visible.forEach(s=>selectedSongIds.delete(s.id));render()};
+  $('#bulkClearButton').onclick=()=>{selectedSongIds.clear();render()};
+  $('#bulkAddButton').onclick=()=>bulkApply('add');
+  $('#bulkRemoveButton').onclick=()=>bulkApply('remove');
+  $('#bulkReplaceButton').onclick=()=>{if(confirm('선택한 곡들의 카테고리를 지금 고른 카테고리로 전부 바꿀까요? 기존 태그는 사라져요.'))bulkApply('replace')};
+  $('#savePageSettingsButton').onclick=savePageSettings;
+  $('#removeHeroImageButton').onclick=()=>updateImageField('hero_image_url');
+  $('#removeProfileImageButton').onclick=()=>updateImageField('profile_image_url');
+  $('#heroImageInput').addEventListener('change',ev=>{const file=ev.target.files[0];renderImagePreview('#heroImagePreview',file?URL.createObjectURL(file):(pageSettings?.hero_image_url||''));});
+  $('#profileImageInput').addEventListener('change',ev=>{const file=ev.target.files[0];renderImagePreview('#profileImagePreview',file?URL.createObjectURL(file):(pageSettings?.profile_image_url||''),true);});
+  $('#heroFeatherInput').addEventListener('input',ev=>$('#heroFeatherValue').textContent=ev.target.value+'%');
+  $('#heroRadiusInput').addEventListener('input',ev=>$('#heroRadiusValue').textContent=ev.target.value+'px');
+  $('#heroHeightInput').addEventListener('input',ev=>$('#heroHeightValue').textContent=ev.target.value+'px');
+  refreshAuth();if(configured){supabase.channel('songbook-admin').on('postgres_changes',{event:'*',schema:'public',table:'songs'},load).subscribe();supabase.channel('songbook-admin-genres').on('postgres_changes',{event:'*',schema:'public',table:'genres'},loadGenres).subscribe();supabase.channel('songbook-admin-settings').on('postgres_changes',{event:'*',schema:'public',table:'page_settings'},loadPageSettings).subscribe();}
+</script></body></html>
