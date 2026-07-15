@@ -1,1 +1,84 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>악보 정리함</title>
+  <meta name="description" content="Google Drive 악보를 아티스트, 제목, 장르별로 정리하고 Excel로 내려받습니다.">
+  <link rel="stylesheet" href="./style.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./script.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top"><span>♫</span>악보 정리함</a>
+    <div class="account-area">
+      <span id="accountText">연결정보와 목록은 저장되지 않습니다</span>
+      <button id="disconnectBtn" class="ghost-button hidden" type="button">연결 해제</button>
+    </div>
+  </header>
 
+  <main id="top">
+    <section class="hero">
+      <div class="eyebrow">GOOGLE DRIVE → EXCEL</div>
+      <h1>흩어진 악보를<br><em>한눈에 정리하세요.</em></h1>
+      <p>Google Drive의 PDF·이미지 악보를 불러와 아티스트, 제목, 장르별로 정리하고 Excel 파일로 내려받습니다.</p>
+      <div class="hero-actions">
+        <button id="connectBtn" class="button primary-button" type="button">Google Drive 연결</button>
+        <button id="sampleBtn" class="button secondary-button" type="button">샘플로 테스트</button>
+      </div>
+      <div class="privacy-note">✓ 각자 연결한 Google Drive만 보이며 서버에는 아무것도 저장하지 않습니다.</div>
+    </section>
+
+    <section id="setupPanel" class="setup-panel" aria-label="Google 연결 설정">
+      <div>
+        <strong>Google OAuth 클라이언트 ID</strong>
+        <p>Google Cloud에서 만든 공개용 연결번호를 입력하세요.</p>
+      </div>
+      <input id="clientIdInput" type="text" placeholder="000000000000-xxxx.apps.googleusercontent.com" aria-label="Google OAuth 클라이언트 ID">
+      <button id="saveClientBtn" class="button primary-button" type="button">저장</button>
+    </section>
+
+    <section class="workspace">
+      <div class="section-heading">
+        <div>
+          <span class="step">01</span>
+          <h2>악보 목록</h2>
+          <p id="status" aria-live="polite">Google Drive를 연결하거나 샘플로 테스트해 보세요.</p>
+        </div>
+        <div class="summary-cards">
+          <div><strong id="totalCount">0</strong><span>찾은 악보</span></div>
+          <div><strong id="selectedCount">0</strong><span>선택 항목</span></div>
+          <div><strong id="genreCount">0</strong><span>장르 수</span></div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <label class="search-box">
+          <span>⌕</span>
+          <input id="searchInput" type="search" placeholder="아티스트, 제목, 장르 검색">
+        </label>
+        <button id="downloadBtn" class="button download-button" type="button" disabled>Excel로 다운로드 ↓</button>
+      </div>
+
+      <div id="emptyState" class="empty-state">
+        <div>
+          <div class="empty-icon">♬</div>
+          <h3>아직 불러온 악보가 없습니다</h3>
+          <p>Google Drive를 연결하거나 샘플 목록으로 기능을 확인하세요.</p>
+        </div>
+      </div>
+
+      <div id="tableWrap" class="table-wrap hidden">
+        <table>
+          <thead><tr><th>선택</th><th>아티스트</th><th>제목</th><th>장르</th><th>원본 파일</th><th>수정일</th></tr></thead>
+          <tbody id="songTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer><strong>악보 정리함</strong><span>파일 내용과 연결정보를 서버에 저장하지 않습니다.</span></footer>
+</body>
+</html>
