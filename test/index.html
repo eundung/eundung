@@ -1,1 +1,160 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#9b8ce3"><title>은교의 노래책 · 관리자</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head><body><main class="app">
+  <header class="hero"><div><p class="eyebrow">SPOON RADIO · DJ CONSOLE</p><h1>은교의 작업실</h1><p id="userStatus">관리자 계정으로 로그인해 주세요.</p></div></header>
+  <div class="setup" id="setup" hidden>⚙️ Supabase 연결값이 아직 설정되지 않았습니다. 설정안내.md를 먼저 확인해 주세요.</div>
+  <div class="toolbar"><b>관리자 도구</b><button class="button secondary" id="authButton">로그인</button></div>
+  <div class="card" id="authCard" style="margin-top:4px;margin-bottom:24px"><div class="section-title">관리자 로그인</div><div class="login"><input id="email" type="email" autocomplete="email" placeholder="관리자 이메일"><input id="password" type="password" autocomplete="current-password" placeholder="비밀번호"><div class="login-actions"><button class="button" id="loginButton">로그인</button></div></div></div>
+  <div class="grid" id="dashboard" hidden>
+    
+    <section class="card" style="grid-column:1/-1">
+      <div class="section-title" style="margin-bottom:0"><span>페이지 설정</span><div style="display:flex;align-items:center;gap:7px"><span class="count">실시간 반영</span><button class="mini" id="pageSettingsToggleButton" type="button" aria-expanded="false" aria-controls="pageSettingsPanel">펼치기</button></div></div>
+      <div class="settings-grid" id="pageSettingsPanel" hidden style="margin-top:15px">
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="eyebrowInput">작은 제목</label>
+            <input id="eyebrowInput" placeholder="예: SPOON RADIO SONGBOOK">
+          </div>
+          <div class="settings-field">
+            <label for="mainTitleInput">메인 타이틀</label>
+            <input id="mainTitleInput" placeholder="예: 은교의 노래책">
+          </div>
+        </div>
 
+        <div class="settings-field">
+          <label for="descriptionInput">소개 문구</label>
+          <textarea id="descriptionInput" rows="3" placeholder="페이지 상단에 표시할 소개 문구"></textarea>
+        </div>
+
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="heroImageInput">상단 대표 이미지</label>
+            <input id="heroImageInput" type="file" accept="image/*">
+            <div class="image-preview" id="heroImagePreview">등록된 이미지가 없습니다.</div>
+            <button class="button secondary" id="removeHeroImageButton" type="button">대표 이미지 삭제</button>
+          </div>
+          <div class="settings-field">
+            <label for="profileImageInput">DJ 프로필 이미지</label>
+            <input id="profileImageInput" type="file" accept="image/*">
+            <div class="image-preview profile-preview" id="profileImagePreview">등록된 이미지가 없습니다.</div>
+            <button class="button secondary" id="removeProfileImageButton" type="button">프로필 이미지 삭제</button>
+          </div>
+        </div>
+
+
+        <div class="section-subtitle">이미지 표현 설정</div>
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="heroFeatherInput">대표 이미지 페더 강도</label>
+            <div class="range-row"><input id="heroFeatherInput" type="range" min="0" max="100" value="0"><span class="range-value" id="heroFeatherValue">0%</span></div>
+          </div>
+          <div class="settings-field">
+            <label for="heroRadiusInput">대표 이미지 모서리 둥글기</label>
+            <div class="range-row"><input id="heroRadiusInput" type="range" min="0" max="60" value="24"><span class="range-value" id="heroRadiusValue">24px</span></div>
+          </div>
+        </div>
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="heroHeightInput">대표 이미지 높이</label>
+            <div class="range-row"><input id="heroHeightInput" type="range" min="140" max="500" value="260"><span class="range-value" id="heroHeightValue">260px</span></div>
+          </div>
+          <div class="settings-field">
+            <label for="heroFitInput">대표 이미지 맞춤 방식</label>
+            <select id="heroFitInput"><option value="cover">영역 채우기</option><option value="contain">전체 이미지 보기</option><option value="fill">영역에 맞추기</option></select>
+          </div>
+        </div>
+
+        <div class="section-subtitle">레이아웃 위치 설정</div>
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="heroPositionInput">대표 이미지 위치</label>
+            <select id="heroPositionInput"><option value="top">페이지 최상단</option><option value="below_header">제목 아래</option><option value="above_search">검색창 위</option><option value="bottom">페이지 하단</option></select>
+          </div>
+          <div class="settings-field">
+            <label for="profilePositionInput">프로필 이미지 위치</label>
+            <select id="profilePositionInput"><option value="header">제목 영역</option><option value="above_title">제목 위</option><option value="center">가운데 단독 표시</option><option value="hidden">숨김</option></select>
+          </div>
+        </div>
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="noticePositionInput">공지 위치</label>
+            <select id="noticePositionInput"><option value="below_header">제목 아래</option><option value="above_search">검색창 위</option><option value="below_search">검색창 아래</option><option value="bottom">페이지 하단</option></select>
+          </div>
+          <div class="settings-field">
+            <label for="linksPositionInput">링크 버튼 위치</label>
+            <select id="linksPositionInput"><option value="below_header">소개 문구 아래</option><option value="above_search">검색창 위</option><option value="bottom">페이지 하단</option></select>
+          </div>
+        </div>
+        <div class="settings-field">
+          <label for="contentAlignInput">상단 콘텐츠 정렬</label>
+          <select id="contentAlignInput"><option value="left">왼쪽</option><option value="center">가운데</option><option value="right">오른쪽</option></select>
+        </div>
+
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="backgroundColorInput">배경색</label>
+            <input id="backgroundColorInput" type="color" value="#fff5f8">
+          </div>
+          <div class="settings-field">
+            <label for="accentColorInput">메인 색상</label>
+            <input id="accentColorInput" type="color" value="#f584ad">
+          </div>
+        </div>
+
+        <div class="settings-field">
+          <label class="toggle-row"><input id="noticeEnabledInput" type="checkbox"> 공지사항 표시</label>
+          <textarea id="noticeTextInput" rows="3" placeholder="공지사항 내용을 입력해 주세요"></textarea>
+        </div>
+
+        <div class="section-subtitle">링크 설정</div>
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="spoonUrlInput">스푼 프로필 주소</label>
+            <input id="spoonUrlInput" type="url" placeholder="https://...">
+          </div>
+          <div class="settings-field">
+            <label for="youtubeUrlInput">유튜브 주소</label>
+            <input id="youtubeUrlInput" type="url" placeholder="https://...">
+          </div>
+        </div>
+
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="instagramUrlInput">인스타그램 주소</label>
+            <input id="instagramUrlInput" type="url" placeholder="https://...">
+          </div>
+          <div class="settings-field">
+            <label for="supportUrlInput">후원 링크</label>
+            <input id="supportUrlInput" type="url" placeholder="https://...">
+          </div>
+        </div>
+
+        <div class="form-row" style="grid-template-columns:1fr 1fr">
+          <div class="settings-field">
+            <label for="requestUrlInput">신청곡 링크</label>
+            <input id="requestUrlInput" type="url" placeholder="https://...">
+          </div>
+          <div class="settings-field">
+            <label for="requestButtonTextInput">신청 버튼 문구</label>
+            <input id="requestButtonTextInput" placeholder="예: 신청곡 보내기">
+          </div>
+        </div>
+
+        <div class="settings-actions">
+          <button class="button" id="savePageSettingsButton" type="button">페이지 설정 저장</button>
+        </div>
+        <div class="form-hint">저장 후 일반 이용자 페이지에 실시간으로 반영됩니다.</div>
+      </div>
+    </section>
+    <section class="card songs-card"><div class="section-title">노래책 <span class="count" id="songCount">0곡</span></div><div class="form-row" style="grid-template-columns:1fr 1fr"><input id="titleInput" placeholder="곡명"><input id="artistInput" placeholder="가수"></div><div class="form-hint">카테고리 (여러 개 선택 가능)</div><div id="genreChooser" class="genre-chooser" style="margin-top:6px"></div><div class="form-row" style="grid-template-columns:1fr auto;margin-top:10px"><span></span><div style="display:flex;gap:6px;justify-content:flex-end"><button class="button secondary" id="cancelEditButton" hidden>취소</button><button class="button" id="addButton">추가</button></div></div><div id="songSortMenu" class="song-sort-menu"></div><label class="admin-search"><span>🔎</span><input id="adminSongSearch" type="search" autocomplete="off" placeholder="등록한 곡명 또는 가수 검색"></label><div class="search-summary" id="searchSummary">전체 곡을 표시 중입니다.</div><label class="select-all-row"><input type="checkbox" id="selectAllCheckbox"> 검색 결과 전체 선택 (체크한 곡 카테고리 일괄 변경)</label><div id="bulkBar" class="bulk-bar" hidden><div class="bulk-bar-head"><span id="bulkCount">0곡 선택됨</span><button class="mini" id="bulkClearButton">선택 해제</button></div><div class="form-hint">적용할 카테고리 선택</div><div id="bulkGenreChooser" class="genre-chooser" style="margin-top:6px"></div><div class="bulk-bar-actions"><button class="button secondary" id="bulkAddButton">선택 카테고리 추가</button><button class="button secondary" id="bulkRemoveButton">선택 카테고리 제거</button><button class="button" id="bulkReplaceButton">카테고리 교체</button></div></div><div class="list" id="songs" style="margin-top:16px"></div><div class="pagination" id="songPagination" aria-label="노래 목록 페이지"></div></section>
+    <section class="card" id="genreCard"><div class="section-title">카테고리 관리 <span class="count" id="genreCount">0개</span></div><div class="form-row" style="grid-template-columns:1fr auto"><input id="newGenreInput" placeholder="새 카테고리 이름"><button class="button" id="addGenreButton">추가</button></div><label class="admin-search" style="margin-top:12px"><span>🔎</span><input id="adminGenreSearch" type="search" autocomplete="off" placeholder="등록한 카테고리 검색"></label><div class="search-summary" id="genreSearchSummary">전체 카테고리를 표시 중입니다.</div><div class="list" id="genreList" style="margin-top:16px"></div></section>
+    <section class="card" id="dataManagementCard" style="grid-column:1/-1"><div class="section-title" style="margin-bottom:0"><span>📂 데이터 관리</span><div style="display:flex;align-items:center;gap:7px"><span class="count">Excel</span><button class="mini" id="dataManagementToggleButton" type="button" aria-expanded="false" aria-controls="dataManagementPanel">펼치기</button></div></div><div id="dataManagementPanel" hidden style="margin-top:15px"><div class="data-actions"><button class="button" id="excelUploadButton" type="button">📥 엑셀 업로드</button><button class="button secondary" id="excelDownloadButton" type="button">📤 엑셀 다운로드(백업)</button><button class="button secondary" id="restoreButton" type="button">🔄 데이터 복원</button></div><input id="excelFileInput" type="file" accept=".xlsx,.csv" hidden><div class="drop-zone" id="excelDropZone" role="button" tabindex="0"><div><b>엑셀 파일을 여기에 놓아주세요</b><span>또는 눌러서 xlsx, csv 파일 선택</span></div></div><div class="form-hint">형식: 제목 | 가수 | 장르 (여러 장르는 쉼표로 구분)</div></div></section>
+  </div>
+</main><div class="toast" id="toast"></div>
+<div class="import-modal" id="importModal" hidden><div class="import-dialog" role="dialog" aria-modal="true" aria-labelledby="importModalTitle"><h2 id="importModalTitle">업로드 미리보기</h2><div class="import-file" id="importFileName"></div><div class="import-stats" id="importStats"></div><div id="importProgress" hidden><div class="progress-track"><div class="progress-bar" id="importProgressBar"></div></div><div class="progress-text" id="importProgressText">0%</div></div><div class="import-error" id="importError" hidden></div><div class="modal-actions"><button class="button secondary" id="importCancelButton" type="button">취소</button><button class="button" id="importStartButton" type="button">업로드 시작</button></div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script type="module" src="./app.js"></script></body></html>
