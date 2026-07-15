@@ -26,8 +26,11 @@
       <p>Google Drive의 PDF·이미지 악보를 불러와 아티스트, 제목, 장르별로 정리하고 Excel 파일로 내려받습니다.</p>
       <div class="hero-actions">
         <button id="connectBtn" class="button primary-button" type="button">Google Drive 연결</button>
+        <label class="button secondary-button upload-button" for="genreDbInput">장르 DB 업로드</label>
+        <input id="genreDbInput" class="visually-hidden" type="file" accept=".xlsx,.xls">
         <button id="sampleBtn" class="button secondary-button" type="button">샘플로 테스트</button>
       </div>
+      <div id="dbInfo" class="db-info">장르 DB가 아직 업로드되지 않았습니다.</div>
       <div class="privacy-note">✓ 각자 연결한 Google Drive만 보이며 서버에는 아무것도 저장하지 않습니다.</div>
     </section>
 
@@ -62,6 +65,22 @@
         <button id="downloadBtn" class="button download-button" type="button" disabled>Excel로 다운로드 ↓</button>
       </div>
 
+      <div class="genre-tools">
+        <label>보기
+          <select id="genreFilter" aria-label="장르 필터">
+            <option value="all">전체</option>
+            <option value="unclassified">미분류만</option>
+          </select>
+        </label>
+        <div class="bulk-change">
+          <label for="bulkGenreInput">선택 곡 장르</label>
+          <input id="bulkGenreInput" list="genreOptions" placeholder="장르 입력">
+          <button id="applyBulkGenreBtn" class="button secondary-button" type="button">모두 변경</button>
+        </div>
+        <button id="selectVisibleBtn" class="ghost-button" type="button">현재 목록 전체 선택</button>
+      </div>
+      <datalist id="genreOptions"></datalist>
+
       <div id="emptyState" class="empty-state">
         <div>
           <div class="empty-icon">♬</div>
@@ -72,9 +91,14 @@
 
       <div id="tableWrap" class="table-wrap hidden">
         <table>
-          <thead><tr><th>선택</th><th>아티스트</th><th>제목</th><th>장르</th><th>원본 파일</th><th>수정일</th></tr></thead>
+          <thead><tr><th>선택</th><th>아티스트</th><th>제목</th><th>장르</th><th>원본 파일</th><th>관리</th></tr></thead>
           <tbody id="songTableBody"></tbody>
         </table>
+      </div>
+      <div id="pager" class="pager hidden">
+        <button id="prevPageBtn" class="ghost-button" type="button">이전</button>
+        <span id="pageInfo">1 / 1</span>
+        <button id="nextPageBtn" class="ghost-button" type="button">다음</button>
       </div>
     </section>
   </main>
